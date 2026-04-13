@@ -1,0 +1,1306 @@
+{
+  "info": {
+    "name": "Quản lý Đồ Án API",
+    "description": "API collection for Thesis Management System",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"string\",\n  \"password\": \"string\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "logout"]
+            }
+          }
+        },
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "profile"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Thesis Rounds",
+      "item": [
+        {
+          "name": "Create Thesis Round",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"semester\": \"2024-2025\",\n  \"round_name\": \"Đợt 1\",\n  \"start_date\": \"2025-01-01\",\n  \"end_date\": \"2025-06-30\",\n  \"registration_deadline\": \"2025-01-15\",\n  \"faculty_id\": 1,\n  \"department_id\": 1,\n  \"default_group_mode\": \"BOTH\",\n  \"default_min_members\": 1,\n  \"default_max_members\": 4\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/thesis-rounds",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "thesis-rounds"]
+            }
+          }
+        },
+        {
+          "name": "Get All Thesis Rounds",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/thesis-rounds",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "thesis-rounds"]
+            }
+          }
+        },
+        {
+          "name": "Get Thesis Round by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/thesis-rounds/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "thesis-rounds", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Activate Thesis Round",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/thesis-rounds/:id/activate",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "thesis-rounds", ":id", "activate"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Assign Instructors",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"instructors\": [\n    {\n      \"instructor_id\": 1,\n      \"quota\": 5,\n      \"notes\": \"Giảng viên chính\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/thesis-rounds/:id/assign-instructors",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "thesis-rounds", ":id", "assign-instructors"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Assign Classes",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"class_ids\": [1, 2, 3]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/thesis-rounds/:id/assign-classes",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "thesis-rounds", ":id", "assign-classes"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Add Guidance Process",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"processes\": [\n    {\n      \"week_number\": 1,\n      \"phase_name\": \"Giai đoạn 1\",\n      \"work_description\": \"Nghiên cứu đề tài\",\n      \"expected_outcome\": \"Báo cáo nghiên cứu\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/thesis-rounds/:id/guidance-process",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "thesis-rounds", ":id", "guidance-process"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Topic Registrations",
+      "item": [
+        {
+          "name": "Create Proposed Topic",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"topic_code\": \"DT001\",\n  \"topic_title\": \"Hệ thống quản lý đồ án\",\n  \"topic_description\": \"Xây dựng hệ thống quản lý đồ án online\",\n  \"objectives\": \"Tạo hệ thống quản lý đồ án\",\n  \"student_requirements\": \"Có kiến thức về web development\",\n  \"technologies_used\": \"React, Node.js, PostgreSQL\",\n  \"topic_references\": \"Tham khảo các hệ thống LMS\",\n  \"thesis_round_id\": 1,\n  \"group_mode\": \"BOTH\",\n  \"min_members\": 1,\n  \"max_members\": 4,\n  \"reason\": \"Đề tài phù hợp với xu hướng hiện nay\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/topic-registrations/proposed-topics",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "topic-registrations", "proposed-topics"]
+            }
+          }
+        },
+        {
+          "name": "Get Proposed Topics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/topic-registrations/proposed-topics?thesis_round_id=1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "topic-registrations", "proposed-topics"],
+              "query": [
+                {
+                  "key": "thesis_round_id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Topic Registration",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"thesis_group_id\": 1,\n  \"thesis_round_id\": 1,\n  \"instructor_id\": 1,\n  \"proposed_topic_id\": 1,\n  \"selection_reason\": \"Đề tài phù hợp với chuyên môn\",\n  \"applied_group_mode\": \"BOTH\",\n  \"applied_min_members\": 1,\n  \"applied_max_members\": 4\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/topic-registrations",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "topic-registrations"]
+            }
+          }
+        },
+        {
+          "name": "Get Topic Registrations",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/topic-registrations",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "topic-registrations"]
+            }
+          }
+        },
+        {
+          "name": "Get Pending Registrations",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/topic-registrations/pending",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "topic-registrations", "pending"]
+            }
+          }
+        },
+        {
+          "name": "Approve Registration",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"APPROVED\",\n  \"rejection_reason\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/topic-registrations/:id/approve",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "topic-registrations", ":id", "approve"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Head Approve Registration",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"APPROVED\",\n  \"rejection_reason\": \"\",\n  \"head_override_group_mode\": \"BOTH\",\n  \"head_override_min_members\": 1,\n  \"head_override_max_members\": 4,\n  \"head_override_reason\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/topic-registrations/:id/head-approve",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "topic-registrations", ":id", "head-approve"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Thesis Groups",
+      "item": [
+        {
+          "name": "Create Thesis Group",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"group_name\": \"Nhóm 1\",\n  \"thesis_round_id\": 1,\n  \"group_type\": \"GROUP\",\n  \"min_members\": 2,\n  \"max_members\": 4\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/thesis-groups",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "thesis-groups"]
+            }
+          }
+        },
+        {
+          "name": "Get Thesis Groups",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/thesis-groups?thesis_round_id=1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "thesis-groups"],
+              "query": [
+                {
+                  "key": "thesis_round_id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Group Invitation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"thesis_group_id\": 1,\n  \"invited_student_id\": 2,\n  \"invitation_message\": \"Mời bạn tham gia nhóm đồ án\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/thesis-groups/invitations",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "thesis-groups", "invitations"]
+            }
+          }
+        },
+        {
+          "name": "Accept Invitation",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/thesis-groups/invitations/:id/accept",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "thesis-groups", "invitations", ":id", "accept"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Reject Invitation",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/thesis-groups/invitations/:id/reject",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "thesis-groups", "invitations", ":id", "reject"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Invitations",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/thesis-groups/invitations",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "thesis-groups", "invitations"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reports & Tasks",
+      "item": [
+        {
+          "name": "Create Thesis Task",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"thesis_id\": 1,\n  \"task_title\": \"Nghiên cứu tài liệu\",\n  \"task_description\": \"Tìm kiếm và đọc tài liệu liên quan\",\n  \"assigned_to\": 1,\n  \"due_date\": \"2025-02-01\",\n  \"priority\": \"HIGH\",\n  \"start_date\": \"2025-01-20\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/thesis-tasks",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "thesis-tasks"]
+            }
+          }
+        },
+        {
+          "name": "Get Thesis Tasks",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/thesis-tasks?thesis_id=1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "thesis-tasks"],
+              "query": [
+                {
+                  "key": "thesis_id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Thesis Task",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"COMPLETED\",\n  \"progress_percentage\": 100,\n  \"notes\": \"Đã hoàn thành\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/thesis-tasks/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "thesis-tasks", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Weekly Report",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"thesis_id\": 1,\n  \"week_number\": 1,\n  \"report_content\": \"Báo cáo tuần 1\",\n  \"progress_percentage\": 20,\n  \"challenges\": \"Khó khăn về tài liệu\",\n  \"next_plan\": \"Tiếp tục tìm tài liệu\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/weekly-reports",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "weekly-reports"]
+            }
+          }
+        },
+        {
+          "name": "Get Weekly Reports",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/weekly-reports?thesis_id=1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "weekly-reports"],
+              "query": [
+                {
+                  "key": "thesis_id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Weekly Report",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"report_content\": \"Cập nhật báo cáo\",\n  \"progress_percentage\": 30,\n  \"challenges\": \"\",\n  \"next_plan\": \"Bắt đầu coding\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/weekly-reports/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "weekly-reports", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Add Individual Contribution",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"weekly_report_id\": 1,\n  \"contribution_description\": \"Thiết kế database\",\n  \"hours_spent\": 8,\n  \"tasks_completed\": \"Hoàn thành schema\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/weekly-report-contributions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "weekly-report-contributions"]
+            }
+          }
+        },
+        {
+          "name": "Submit Final Report",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"final_report_file\": \"report.pdf\",\n  \"outline_file\": \"outline.pdf\",\n  \"start_date\": \"2025-01-01\",\n  \"end_date\": \"2025-06-30\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/theses/:id/submit-final-report",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "theses", ":id", "submit-final-report"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Thesis Progress",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/thesis-progress/:thesisId",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "thesis-progress", ":thesisId"],
+              "variable": [
+                {
+                  "key": "thesisId",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Grading",
+      "item": [
+        {
+          "name": "Create Review Assignment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"thesis_id\": 1,\n  \"reviewer_id\": 2,\n  \"review_order\": 1,\n  \"review_deadline\": \"2025-05-30\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/review-assignments",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "review-assignments"]
+            }
+          }
+        },
+        {
+          "name": "Submit Review Result",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"review_assignment_id\": 1,\n  \"review_content\": \"Nội dung đánh giá\",\n  \"topic_evaluation\": \"Đề tài tốt\",\n  \"result_evaluation\": \"Kết quả khả quan\",\n  \"improvement_suggestions\": \"Cần cải thiện phần UI\",\n  \"review_score\": 8.5,\n  \"defense_approval\": true,\n  \"rejection_reason\": \"\",\n  \"review_file\": \"review.pdf\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/review-results",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "review-results"]
+            }
+          }
+        },
+        {
+          "name": "Submit Supervision Comment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"thesis_id\": 1,\n  \"instructor_id\": 1,\n  \"comment_content\": \"Nhận xét hướng dẫn\",\n  \"attitude_evaluation\": \"Tốt\",\n  \"capability_evaluation\": \"Khá\",\n  \"result_evaluation\": \"Đạt yêu cầu\",\n  \"supervision_score\": 8.0,\n  \"defense_approval\": true,\n  \"rejection_reason\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/supervision-comments",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "supervision-comments"]
+            }
+          }
+        },
+        {
+          "name": "Submit Peer Evaluation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"thesis_id\": 1,\n  \"evaluator_id\": 1,\n  \"evaluated_id\": 2,\n  \"evaluation_round\": 1,\n  \"teamwork_score\": 8.5,\n  \"responsibility_score\": 9.0,\n  \"technical_skill_score\": 8.0,\n  \"communication_score\": 8.5,\n  \"contribution_score\": 8.0,\n  \"average_score\": 8.4,\n  \"strengths\": \"Làm việc nhóm tốt\",\n  \"weaknesses\": \"Cần cải thiện kỹ năng kỹ thuật\",\n  \"suggestions\": \"Học thêm công nghệ mới\",\n  \"is_anonymous\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/peer-evaluations",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "peer-evaluations"]
+            }
+          }
+        },
+        {
+          "name": "Review Weekly Report",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"instructor_feedback\": \"Báo cáo tốt\",\n  \"review_score\": 8.0,\n  \"review_status\": \"APPROVED\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/weekly-reports/:id/review",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "weekly-reports", ":id", "review"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Thesis Scores",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/thesis-scores/:thesisId",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "thesis-scores", ":thesisId"],
+              "variable": [
+                {
+                  "key": "thesisId",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Defense",
+      "item": [
+        {
+          "name": "Create Defense Council",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"council_code\": \"HDB001\",\n  \"council_name\": \"Hội đồng bảo vệ 1\",\n  \"thesis_round_id\": 1,\n  \"chairman_id\": 1,\n  \"secretary_id\": 2,\n  \"defense_date\": \"2025-06-15\",\n  \"start_time\": \"08:00\",\n  \"end_time\": \"17:00\",\n  \"venue\": \"Phòng A101\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/defense-councils",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "defense-councils"]
+            }
+          }
+        },
+        {
+          "name": "Add Council Member",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"instructor_id\": 3,\n  \"role\": \"MEMBER\",\n  \"order_number\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/defense-councils/:id/members",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "defense-councils", ":id", "members"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Defense Assignment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"defense_council_id\": 1,\n  \"thesis_id\": 1,\n  \"defense_order\": 1,\n  \"defense_time\": \"08:30\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/defense-assignments",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "defense-assignments"]
+            }
+          }
+        },
+        {
+          "name": "Submit Defense Result",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"defense_assignment_id\": 1,\n  \"instructor_id\": 1,\n  \"defense_score\": 8.5,\n  \"comments\": \"Bảo vệ tốt\",\n  \"suggestions\": \"Cần chuẩn bị slide tốt hơn\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/defense-results",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "defense-results"]
+            }
+          }
+        },
+        {
+          "name": "Complete Defense Council",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/defense-councils/:id/complete",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "defense-councils", ":id", "complete"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Defense Schedule",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/defense-schedule/:thesisId",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "defense-schedule", ":thesisId"],
+              "variable": [
+                {
+                  "key": "thesisId",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Defense Results",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/defense-results/:thesisId",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "defense-results", ":thesisId"],
+              "variable": [
+                {
+                  "key": "thesisId",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Finalize Thesis",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/theses/:id/finalize",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "theses", ":id", "finalize"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
