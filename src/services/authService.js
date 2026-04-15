@@ -109,17 +109,17 @@ const logout = () => {
   return { message: 'Đăng xuất thành công' };
 };
 
-const getProfile = async (user_id, role) => {
-  if (!user_id) {
-    throw new Error('Thiếu user_id');
+const getProfile = async (user) => {
+  if (!user || !user.id) {
+    throw new Error('Thiếu thông tin người dùng');
   }
 
-  const parsedUserId = parseInt(user_id);
+  const parsedUserId = parseInt(user.id);
   if (isNaN(parsedUserId)) {
     throw new Error('user_id không hợp lệ');
   }
 
-  const user = await prisma.users.findUnique({
+  const dbUser = await prisma.users.findUnique({
     where: { id: parsedUserId },
     select: {
       id: true,
@@ -131,11 +131,12 @@ const getProfile = async (user_id, role) => {
     },
   });
 
-  if (!user) {
+  if (!dbUser) {
     throw new Error('Không tìm thấy người dùng');
   }
 
   let additionalInfo = {};
+  const role = user.role;
 
   if (role === 'student') {
     const student = await prisma.students.findUnique({
@@ -144,6 +145,7 @@ const getProfile = async (user_id, role) => {
     });
     if (student) {
       additionalInfo = {
+        studentId: student.id,
         studentCode: student.student_code,
         className: student.classes?.class_name,
         majorName: student.majors?.major_name,
@@ -158,6 +160,7 @@ const getProfile = async (user_id, role) => {
     });
     if (instructor) {
       additionalInfo = {
+        instructorId: instructor.id,
         instructorCode: instructor.instructor_code,
         departmentName: instructor.departments_instructors_department_idTodepartments?.department_name,
         degree: instructor.degree,
@@ -167,7 +170,12 @@ const getProfile = async (user_id, role) => {
   }
 
   return {
-    ...user,
+    id: dbUser.id,
+    email: dbUser.email,
+    fullName: dbUser.full_name,
+    phone: dbUser.phone,
+    avatar: dbUser.avatar,
+    createdAt: dbUser.created_at,
     ...additionalInfo,
     role,
   };

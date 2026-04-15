@@ -13,6 +13,11 @@ const gradingRoutes = require('./src/routes/gradingRoutes');
 const reportRoutes = require('./src/routes/reportRoutes');
 const defenseRoutes = require('./src/routes/defenseRoutes');
 const instructorRoutes = require('./src/routes/instructorRoutes');
+const topicRoutes = require('./src/routes/topicRoutes');
+const groupRoutes = require('./src/routes/groupRoutes');
+const registrationRoutes = require('./src/routes/registrationRoutes');
+const weeklyReportRoutes = require('./src/routes/weeklyReportRoutes');
+const studentRoutes = require('./src/routes/studentRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -32,6 +37,11 @@ app.use('/api', gradingRoutes);
 app.use('/api', reportRoutes);
 app.use('/api', defenseRoutes);
 app.use('/api/instructors', instructorRoutes);
+app.use('/api/students', studentRoutes);
+app.use('/api/thesis-rounds', topicRoutes);
+app.use('/api', groupRoutes);
+app.use('/api', registrationRoutes);
+app.use('/api', weeklyReportRoutes);
 
 app.get('/', (req, res) => {
   res.json({
@@ -42,9 +52,14 @@ app.get('/', (req, res) => {
       thesisRounds: '/api/department-head/thesis-rounds',
       topicRegistrations: '/api/topic-registrations',
       thesisGroups: '/api/thesis-groups',
+      topics: '/api/thesis-rounds/:roundId/topics',
+      groups: '/api/thesis-rounds/:roundId/groups, /api/groups/:groupId/invite, /api/invitations/:invitationId/respond, /api/groups/:groupId/register-topic',
+      registrations: '/api/instructor/registrations, /api/head/registrations, /api/registrations/:registrationId/instructor-review, /api/registrations/:registrationId/head-review',
+      weeklyReports: '/api/theses/:thesisId/weekly-reports, /api/weekly-reports/:reportId/feedback',
       grading: '/api/review-assignments, /api/weekly-reports',
       reports: '/api/thesis-tasks, /api/weekly-reports',
       defense: '/api/defense-councils, /api/defense-assignments',
+      students: '/api/students/thesis-rounds, /api/students/instructors',
     },
   });
 });

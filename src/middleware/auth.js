@@ -4,7 +4,7 @@ const prisma = require('../config/database');
 const auth = async (req, res, next) => {
   try {
     const token = req.headers.authorization?.replace('Bearer ', '');
-
+    
     if (!token) {
       return res.status(401).json({ error: 'Token không được cung cấp' });
     }
@@ -19,10 +19,49 @@ const auth = async (req, res, next) => {
       return res.status(401).json({ error: 'Token không hợp lệ hoặc người dùng không tồn tại' });
     }
 
-    req.user = user;
-    req.userId = decoded.userId;
-    req.userRole = decoded.role;
-    
+    const roleAssignments = await prisma.user_role_assignments.findMany({
+      where: {
+        user_id: user.id,
+        status: true,
+      },
+      include: {
+        user_roles: true,
+      },
+    });
+
+    let role = null;
+    const rolePriority = ['ADMIN', 'DEPARTMENT_HEAD', 'INSTRUCTOR', 'STUDENT'];
+    for (const roleCode of rolePriority) {
+      const assignment = roleAssignments.find(ra => ra.user_roles.role_code === roleCode);
+      if (assignment) {
+        role = roleCode.toLowerCase();
+        break;
+      }
+    }
+
+    let instructorId = null;
+    let studentId = null;
+
+    const student = await prisma.students.findUnique({
+      where: { user_id: user.id },
+    });
+    if (student) {
+      studentId = student.id;
+    }
+
+    const instructor = await prisma.instructors.findUnique({
+      where: { user_id: user.id },
+    });
+    if (instructor) {
+      instructorId = instructor.id;
+    }
+
+    req.user = {
+      id: user.id,
+      role,
+      instructorId,
+      studentId,
+    };
     next();
   } catch (error) {
     return res.status(401).json({ error: 'Token không hợp lệ' });
@@ -31,7 +70,10 @@ const auth = async (req, res, next) => {
 
 const requireRole = (...roles) => {
   return (req, res, next) => {
-    if (!roles.includes(req.userRole)) {
+    if (!req.user || !req.user.role) {
+      return res.status(403).json({ error: 'Bạn không có quyền truy cập' });
+    }
+    if (!roles.includes(req.user.role)) {
       return res.status(403).json({ error: 'Bạn không có quyền truy cập' });
     }
     next();

@@ -1,63 +1,88 @@
+const HttpError = require('../utils/HttpError');
 const prisma = require('../config/database');
 
-const createThesisRound = async (data) => {
+const createThesisRound = async (data, user) => {
   try {
-    console.log('Creating thesis round with data:', data);
     const {
-      round_code,
-      round_name,
-      thesis_type_id,
+      roundCode,
+      roundName,
+      thesisTypeId,
+      departmentId,
+      academicYear,
       semester,
-      academic_year,
-      start_date,
-      end_date,
-      registration_deadline,
-      faculty_id,
-      department_id,
-      default_group_mode,
-      default_min_members,
-      default_max_members,
+      startDate,
+      endDate,
+      topicProposalDeadline,
+      registrationDeadline,
+      reportSubmissionDeadline,
+      notes,
     } = data;
 
+    // Validate deadline order
+    if (topicProposalDeadline && registrationDeadline && endDate) {
+      if (new Date(topicProposalDeadline) >= new Date(registrationDeadline)) {
+        throw new HttpError(400, 'Hạn nộp đề tài phải trước hạn đăng ký');
+      }
+      if (new Date(registrationDeadline) >= new Date(endDate)) {
+        throw new HttpError(400, 'Hạn đăng ký phải trước ngày kết thúc');
+      }
+    }
+
+    // Check for overlapping active round in same department + semester + academicYear
+    const existingRound = await prisma.thesis_rounds.findFirst({
+      where: {
+        department_id: parseInt(departmentId),
+        semester: parseInt(semester),
+        academic_year: academicYear,
+        status: { in: ['Preparing', 'Open', 'In Progress'] },
+      },
+    });
+
+    if (existingRound) {
+      throw new HttpError(400, 'Đã tồn tại đợt đồ án đang hoạt động trong cùng kỳ học');
+    }
+
+    // Create thesis_rounds with status = 'Preparing'
     const thesisRound = await prisma.thesis_rounds.create({
       data: {
-        round_code,
-        round_name,
-        thesis_type_id,
+        round_code: roundCode,
+        round_name: roundName,
+        thesis_type_id: parseInt(thesisTypeId),
+        department_id: parseInt(departmentId),
+        academic_year: academicYear,
         semester: semester ? parseInt(semester) : null,
-        academic_year,
-        start_date: start_date ? new Date(start_date) : null,
-        end_date: end_date ? new Date(end_date) : null,
-        registration_deadline: registration_deadline ? new Date(registration_deadline) : null,
-        faculty_id,
-        department_id,
+        start_date: startDate ? new Date(startDate) : null,
+        end_date: endDate ? new Date(endDate) : null,
+        topic_proposal_deadline: topicProposalDeadline ? new Date(topicProposalDeadline) : null,
+        registration_deadline: registrationDeadline ? new Date(registrationDeadline) : null,
+        report_submission_deadline: reportSubmissionDeadline ? new Date(reportSubmissionDeadline) : null,
+        notes,
         status: 'Preparing',
       },
     });
 
-    console.log('Thesis round created:', thesisRound);
-
+    // Create thesis_round_rules with defaults
     await prisma.thesis_round_rules.create({
       data: {
         thesis_round_id: thesisRound.id,
-        default_group_mode: default_group_mode || 'BOTH',
-        default_min_members: default_min_members || 1,
-        default_max_members: default_max_members || 4,
+        default_group_mode: 'BOTH',
+        default_min_members: 1,
+        default_max_members: 4,
       },
     });
 
-    console.log('Thesis round rules created');
     return thesisRound;
   } catch (error) {
+    if (error instanceof HttpError) throw error;
     console.error('Error in createThesisRound service:', error);
-    throw error;
+    throw new HttpError(500, 'Lỗi tạo đợt đồ án');
   }
 };
 
 const activateThesisRound = async (id) => {
   return await prisma.thesis_rounds.update({
     where: { id: parseInt(id) },
-    data: { status: 'Active' },
+    data: { status: 'ACTIVE' },
   });
 };
 
@@ -72,10 +97,10 @@ const autoUpdateThesisRoundStatus = async () => {
   const now = new Date();
   console.log('Checking thesis rounds for status update at:', now);
 
-  // Chuyển từ Active sang In Progress khi qua registration_deadline
+  // Chuyển từ ACTIVE sang In Progress khi qua registration_deadline
   const roundsToStart = await prisma.thesis_rounds.findMany({
     where: {
-      status: 'Active',
+      status: 'ACTIVE',
       registration_deadline: {
         lte: now,
       },
@@ -93,24 +118,60 @@ const autoUpdateThesisRoundStatus = async () => {
   return { updated: roundsToStart.length };
 };
 
-const assignInstructors = async (id, data) => {
-  const { instructors } = data;
+const assignInstructors = async (id, data, user) => {
+  try {
+    const { instructorIds, supervisionQuota } = data;
 
-  const assignments = await Promise.all(
-    instructors.map((instructor) =>
-      prisma.instructor_assignments.create({
-        data: {
-          thesis_round_id: parseInt(id),
-          instructor_id: instructor.instructor_id,
-          supervision_quota: instructor.quota || 0,
-          current_load: 0,
-          notes: instructor.notes,
-        },
-      })
-    )
-  );
+    if (!instructorIds || !Array.isArray(instructorIds)) {
+      throw new HttpError(400, 'instructorIds phải là một mảng');
+    }
 
-  return assignments;
+    const round = await prisma.thesis_rounds.findUnique({
+      where: { id: parseInt(id) },
+    });
+
+    if (!round) {
+      throw new HttpError(404, 'Không tìm thấy đợt đồ án');
+    }
+
+    if (round.status !== 'ACTIVE') {
+      throw new HttpError(400, 'Chỉ có thể phân công giảng viên khi đợt đồ án ở trạng thái ACTIVE');
+    }
+
+    // Upsert instructor_assignments for each instructorId
+    const assignments = await Promise.all(
+      instructorIds.map((instructorId) =>
+        prisma.instructor_assignments.upsert({
+          where: {
+            thesis_round_id_instructor_id: {
+              thesis_round_id: parseInt(id),
+              instructor_id: parseInt(instructorId),
+            },
+          },
+          update: {
+            supervision_quota: supervisionQuota,
+          },
+          create: {
+            thesis_round_id: parseInt(id),
+            instructor_id: parseInt(instructorId),
+            supervision_quota: supervisionQuota,
+            current_load: 0,
+          },
+          include: {
+            instructors: {
+              include: { users: true },
+            },
+          },
+        })
+      )
+    );
+
+    return assignments;
+  } catch (error) {
+    if (error instanceof HttpError) throw error;
+    console.error('Error in assignInstructors service:', error);
+    throw new HttpError(500, 'Lỗi phân công giảng viên');
+  }
 };
 
 const assignClasses = async (id, data) => {
@@ -164,9 +225,7 @@ const getThesisRounds = async () => {
 const getActiveThesisRounds = async () => {
   return await prisma.thesis_rounds.findMany({
     where: {
-      status: {
-        in: ['Active', 'ACTIVE'],
-      },
+      status: 'ACTIVE',
     },
     include: {
       thesis_round_rules: true,
@@ -199,6 +258,48 @@ const getThesisRoundById = async (id) => {
   return thesisRound;
 };
 
+const updateRoundStatus = async (roundId, status, user) => {
+  try {
+    const validStatuses = ['Preparing', 'Open', 'Closed', 'Completed', 'In Progress'];
+    if (!validStatuses.includes(status)) {
+      throw new HttpError(400, 'Trạng thái không hợp lệ');
+    }
+
+    const round = await prisma.thesis_rounds.findUnique({
+      where: { id: parseInt(roundId) },
+    });
+
+    if (!round) {
+      throw new HttpError(404, 'Không tìm thấy đợt đồ án');
+    }
+
+    // Validate status transition
+    const validTransitions = {
+      'Preparing': ['Open'],
+      'Open': ['Closed', 'In Progress'],
+      'In Progress': ['Completed'],
+      'Closed': [],
+      'Completed': [],
+    };
+
+    if (!validTransitions[round.status].includes(status)) {
+      throw new HttpError(400, `Không thể chuyển từ trạng thái ${round.status} sang ${status}`);
+    }
+
+    // Update thesis_rounds.status
+    const updatedRound = await prisma.thesis_rounds.update({
+      where: { id: parseInt(roundId) },
+      data: { status },
+    });
+
+    return updatedRound;
+  } catch (error) {
+    if (error instanceof HttpError) throw error;
+    console.error('Error in updateRoundStatus service:', error);
+    throw new HttpError(500, 'Lỗi cập nhật trạng thái đợt đồ án');
+  }
+};
+
 module.exports = {
   createThesisRound,
   activateThesisRound,
@@ -210,4 +311,5 @@ module.exports = {
   getThesisRounds,
   getActiveThesisRounds,
   getThesisRoundById,
+  updateRoundStatus,
 };
