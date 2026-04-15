@@ -56,11 +56,22 @@ const auth = async (req, res, next) => {
       instructorId = instructor.id;
     }
 
+    let departmentId = null;
+    if (role === 'department_head') {
+      const department = await prisma.departments.findFirst({
+        where: { head_id: instructorId },
+      });
+      if (department) {
+        departmentId = department.id;
+      }
+    }
+
     req.user = {
       id: user.id,
       role,
       instructorId,
       studentId,
+      departmentId,
     };
     next();
   } catch (error) {

@@ -220,9 +220,89 @@ const createInstructor = async (data) => {
   return instructor;
 };
 
+const getInstructorsByDepartmentHead = async (department_id, filters) => {
+  const { thesis_round_id, search } = filters;
+
+  const where = {
+    department_id: parseInt(department_id),
+    status: true,
+  };
+
+  if (thesis_round_id) {
+    where.instructor_assignments = {
+      some: {
+        thesis_round_id: parseInt(thesis_round_id),
+        status: true,
+      },
+    };
+  }
+
+  if (search) {
+    where.OR = [
+      {
+        instructor_code: {
+          contains: search,
+          mode: 'insensitive',
+        },
+      },
+      {
+        users: {
+          full_name: {
+            contains: search,
+            mode: 'insensitive',
+          },
+        },
+      },
+    ];
+  }
+
+  return await prisma.instructors.findMany({
+    where,
+    include: {
+      users: {
+        select: {
+          id: true,
+          full_name: true,
+          email: true,
+          phone: true,
+          avatar: true,
+        },
+      },
+      departments_instructors_department_idTodepartments: {
+        select: {
+          id: true,
+          department_code: true,
+          department_name: true,
+        },
+      },
+      instructor_assignments: thesis_round_id
+        ? {
+            where: {
+              thesis_round_id: parseInt(thesis_round_id),
+              status: true,
+            },
+            select: {
+              id: true,
+              thesis_round_id: true,
+              supervision_quota: true,
+              current_load: true,
+              notes: true,
+            },
+          }
+        : false,
+    },
+    orderBy: {
+      users: {
+        full_name: 'asc',
+      },
+    },
+  });
+};
+
 module.exports = {
   getInstructors,
   getInstructorById,
   getInstructorByUserId,
   createInstructor,
+  getInstructorsByDepartmentHead,
 };

@@ -46,9 +46,28 @@ const createInstructor = async (req, res) => {
   }
 };
 
+const getInstructorsByDepartmentHead = async (req, res) => {
+  try {
+    const { thesis_round_id, search, department_id } = req.query;
+    // Nếu có authentication, lấy department_id từ req.user
+    const deptId = req.user?.departmentId || department_id;
+    
+    if (!deptId) {
+      return res.status(400).json({ error: 'Thiếu department_id' });
+    }
+    
+    const result = await instructorService.getInstructorsByDepartmentHead(deptId, { thesis_round_id, search });
+    res.json(result);
+  } catch (error) {
+    console.error('Get instructors by department head error:', error);
+    res.status(500).json({ error: 'Lỗi lấy danh sách giảng viên theo bộ môn' });
+  }
+};
+
 module.exports = {
   getInstructors,
   getInstructorById,
   getInstructorByUserId,
   createInstructor,
+  getInstructorsByDepartmentHead,
 };

@@ -174,6 +174,51 @@ const assignInstructors = async (id, data, user) => {
   }
 };
 
+const getInstructorAssignments = async (id) => {
+  try {
+    const assignments = await prisma.instructor_assignments.findMany({
+      where: {
+        thesis_round_id: parseInt(id),
+        status: true,
+      },
+      include: {
+        instructors: {
+          include: {
+            users: {
+              select: {
+                id: true,
+                full_name: true,
+                email: true,
+                phone: true,
+                avatar: true,
+              },
+            },
+            departments_instructors_department_idTodepartments: {
+              select: {
+                id: true,
+                department_code: true,
+                department_name: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        instructors: {
+          users: {
+            full_name: 'asc',
+          },
+        },
+      },
+    });
+
+    return assignments;
+  } catch (error) {
+    console.error('Error in getInstructorAssignments service:', error);
+    throw new HttpError(500, 'Lỗi lấy danh sách phân công giảng viên');
+  }
+};
+
 const assignClasses = async (id, data) => {
   const { class_ids } = data;
 
@@ -306,6 +351,7 @@ module.exports = {
   startThesisRound,
   autoUpdateThesisRoundStatus,
   assignInstructors,
+  getInstructorAssignments,
   assignClasses,
   addGuidanceProcess,
   getThesisRounds,

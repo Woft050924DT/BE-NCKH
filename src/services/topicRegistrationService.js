@@ -1,4 +1,5 @@
 const prisma = require('../config/database');
+const thesisGroupService = require('./thesisGroupService');
 
 const createProposedTopic = async (data) => {
   const {
@@ -26,7 +27,7 @@ const createProposedTopic = async (data) => {
   });
   console.log('Existing group_mode values in DB:', existingRules.map(r => r.group_mode));
 
-  const validGroupModes = ['BOTH', 'GROUP', 'INDIVIDUAL'];
+  const validGroupModes = ['BOTH', 'GROUP_ONLY', 'INDIVIDUAL_ONLY'];
   
   let normalizedGroupMode = 'BOTH';
   if (group_mode) {
@@ -36,7 +37,7 @@ const createProposedTopic = async (data) => {
   console.log('Normalized group_mode:', normalizedGroupMode);
 
   if (!validGroupModes.includes(normalizedGroupMode)) {
-    throw new Error(`group_mode phải là BOTH, GROUP hoặc INDIVIDUAL. Nhận được: "${normalizedGroupMode}"`);
+    throw new Error(`group_mode phải là BOTH, GROUP_ONLY hoặc INDIVIDUAL_ONLY. Nhận được: "${normalizedGroupMode}"`);
   }
 
   const existingTopic = await prisma.proposed_topics.findFirst({
@@ -133,9 +134,71 @@ const createTopicRegistration = async (data) => {
     throw new Error('Không tìm thấy sinh viên');
   }
 
+  // Validate applied_group_mode
+  const validGroupModes = ['BOTH', 'GROUP_ONLY', 'INDIVIDUAL_ONLY'];
+  if (!applied_group_mode || !validGroupModes.includes(applied_group_mode)) {
+    throw new Error(`applied_group_mode là bắt buộc và phải là một trong các giá trị: ${validGroupModes.join(', ')}`);
+  }
+
+  let finalThesisGroupId = thesis_group_id;
+
+  // For individual mode, automatically create an individual group if not provided
+  if (applied_group_mode === 'INDIVIDUAL_ONLY' && !thesis_group_id) {
+    // Check if student is eligible in this thesis round, auto-create if not exists
+    let studentRound = await prisma.student_thesis_rounds.findUnique({
+      where: {
+        thesis_round_id_student_id: {
+          thesis_round_id: parseInt(thesis_round_id),
+          student_id: student.id,
+        },
+      },
+    });
+
+    if (!studentRound) {
+      // Auto-create student_thesis_rounds record
+      studentRound = await prisma.student_thesis_rounds.create({
+        data: {
+          thesis_round_id: parseInt(thesis_round_id),
+          student_id: student.id,
+          eligible: true,
+        },
+      });
+    }
+
+    if (!studentRound.eligible) {
+      throw new Error('Bạn không đủ điều kiện tham gia đợt đồ án này');
+    }
+
+    const individualGroup = await thesisGroupService.createThesisGroup({
+      group_name: `Cá nhân - ${student.student_code}`,
+      thesis_round_id: parseInt(thesis_round_id),
+      group_type: 'INDIVIDUAL',
+      min_members: 1,
+      max_members: 1,
+      student_id: parseInt(student_id),
+    });
+    finalThesisGroupId = individualGroup.id;
+  } else if (applied_group_mode !== 'INDIVIDUAL_ONLY') {
+    // Validate thesis_group_id for non-individual modes
+    if (!thesis_group_id) {
+      throw new Error('thesis_group_id là bắt buộc cho chế độ nhóm');
+    }
+
+    const thesisGroup = await prisma.thesis_groups.findFirst({
+      where: {
+        id: parseInt(thesis_group_id),
+        thesis_round_id: parseInt(thesis_round_id),
+      },
+    });
+
+    if (!thesisGroup) {
+      throw new Error('Không tìm thấy nhóm đồ án trong đợt đồ án này');
+    }
+  }
+
   const topicRegistration = await prisma.topic_registrations.create({
     data: {
-      thesis_group_id,
+      thesis_group_id: parseInt(finalThesisGroupId),
       thesis_round_id,
       instructor_id,
       proposed_topic_id,

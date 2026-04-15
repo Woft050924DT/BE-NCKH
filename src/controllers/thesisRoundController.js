@@ -129,6 +129,32 @@ const assignInstructors = async (req, res) => {
   }
 };
 
+const getInstructorAssignments = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await thesisRoundService.getInstructorAssignments(id);
+    res.json({
+      success: true,
+      data: result,
+      message: 'Lấy danh sách phân công giảng viên thành công'
+    });
+  } catch (error) {
+    if (error instanceof HttpError) {
+      return res.status(error.statusCode).json({
+        success: false,
+        data: null,
+        message: error.message
+      });
+    }
+    console.error('Get instructor assignments error:', error);
+    res.status(500).json({
+      success: false,
+      data: null,
+      message: 'Lỗi lấy danh sách phân công giảng viên'
+    });
+  }
+};
+
 const assignClasses = async (req, res) => {
   try {
     const { id } = req.params;
@@ -291,6 +317,7 @@ module.exports = {
   startThesisRound,
   autoUpdateThesisRoundStatus,
   assignInstructors,
+  getInstructorAssignments,
   assignClasses,
   addGuidanceProcess,
   getThesisRounds,

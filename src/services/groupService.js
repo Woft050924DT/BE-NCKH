@@ -380,6 +380,12 @@ const registerTopic = async (groupId, data, user) => {
       }
     }
 
+    // Validate applied_group_mode
+    const validGroupModes = ['BOTH', 'GROUP', 'INDIVIDUAL'];
+    if (!appliedGroupMode || !validGroupModes.includes(appliedGroupMode)) {
+      throw new Error(`applied_group_mode là bắt buộc và phải là một trong các giá trị: ${validGroupModes.join(', ')}`);
+    }
+
     // $transaction to create registration
     const result = await prisma.$transaction(async (tx) => {
       const registration = await tx.topic_registrations.create({

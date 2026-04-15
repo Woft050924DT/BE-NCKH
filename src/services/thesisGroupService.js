@@ -11,23 +11,29 @@ const createThesisGroup = async (data) => {
     throw new Error('Không tìm thấy sinh viên');
   }
 
+  // Generate unique group_code
+  const group_code = `GRP-${thesis_round_id}-${Date.now().toString().slice(-6)}`;
+
   const thesisGroup = await prisma.thesis_groups.create({
     data: {
+      group_code,
       group_name,
       thesis_round_id,
       group_type: group_type || 'GROUP',
       status: 'FORMING',
       min_members: min_members || 1,
       max_members: max_members || 4,
+      created_by: student.id,
     },
   });
 
   await prisma.thesis_group_members.create({
     data: {
       thesis_group_id: thesisGroup.id,
+      thesis_round_id: parseInt(thesis_round_id),
       student_id: student.id,
       role: 'LEADER',
-      join_method: 'CREATE',
+      join_method: 'CREATOR',
       joined_at: new Date(),
     },
   });

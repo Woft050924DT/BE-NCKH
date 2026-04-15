@@ -8,6 +8,6 @@ const { getInstructors } = require('../controllers/instructorController');
 router.get('/thesis-rounds', auth, getActiveThesisRounds);
 
 // Get list of instructors for students
-router.get('/instructors', auth, getInstructors);
+router.get('/instructors', getInstructors);
 
 module.exports = router;

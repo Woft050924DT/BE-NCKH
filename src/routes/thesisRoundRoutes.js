@@ -7,6 +7,7 @@ const {
   startThesisRound,
   autoUpdateThesisRoundStatus,
   assignInstructors,
+  getInstructorAssignments,
   assignClasses,
   addGuidanceProcess,
   getThesisRounds,
@@ -19,7 +20,8 @@ router.post('/', auth, createThesisRound);
 router.put('/:id/activate', auth, activateThesisRound);
 router.put('/:id/start', auth, startThesisRound);
 router.post('/auto-update-status', autoUpdateThesisRoundStatus);
-router.post('/:id/assign-instructors', auth, assignInstructors);
+router.post('/:id/assign-instructors', assignInstructors);
+router.get('/:id/instructors', getInstructorAssignments);
 router.post('/:id/assign-classes', auth, assignClasses);
 router.post('/:id/guidance-process', auth, addGuidanceProcess);
 router.patch('/:roundId/status', auth, updateRoundStatus);
