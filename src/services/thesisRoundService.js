@@ -1,49 +1,96 @@
 const prisma = require('../config/database');
 
 const createThesisRound = async (data) => {
-  const {
-    semester,
-    round_name,
-    start_date,
-    end_date,
-    registration_deadline,
-    faculty_id,
-    department_id,
-    default_group_mode,
-    default_min_members,
-    default_max_members,
-  } = data;
-
-  const thesisRound = await prisma.thesis_rounds.create({
-    data: {
-      semester,
+  try {
+    console.log('Creating thesis round with data:', data);
+    const {
+      round_code,
       round_name,
-      start_date: new Date(start_date),
-      end_date: new Date(end_date),
-      registration_deadline: new Date(registration_deadline),
+      thesis_type_id,
+      semester,
+      academic_year,
+      start_date,
+      end_date,
+      registration_deadline,
       faculty_id,
       department_id,
-      status: 'DRAFT',
-    },
-  });
+      default_group_mode,
+      default_min_members,
+      default_max_members,
+    } = data;
 
-  await prisma.thesis_round_rules.create({
-    data: {
-      thesis_round_id: thesisRound.id,
-      default_group_mode: default_group_mode || 'BOTH',
-      default_min_members: default_min_members || 1,
-      default_max_members: default_max_members || 4,
-    },
-  });
+    const thesisRound = await prisma.thesis_rounds.create({
+      data: {
+        round_code,
+        round_name,
+        thesis_type_id,
+        semester: semester ? parseInt(semester) : null,
+        academic_year,
+        start_date: start_date ? new Date(start_date) : null,
+        end_date: end_date ? new Date(end_date) : null,
+        registration_deadline: registration_deadline ? new Date(registration_deadline) : null,
+        faculty_id,
+        department_id,
+        status: 'Preparing',
+      },
+    });
 
-  return thesisRound;
+    console.log('Thesis round created:', thesisRound);
+
+    await prisma.thesis_round_rules.create({
+      data: {
+        thesis_round_id: thesisRound.id,
+        default_group_mode: default_group_mode || 'BOTH',
+        default_min_members: default_min_members || 1,
+        default_max_members: default_max_members || 4,
+      },
+    });
+
+    console.log('Thesis round rules created');
+    return thesisRound;
+  } catch (error) {
+    console.error('Error in createThesisRound service:', error);
+    throw error;
+  }
 };
 
 const activateThesisRound = async (id) => {
   return await prisma.thesis_rounds.update({
     where: { id: parseInt(id) },
-    data: { status: 'ACTIVE' },
+    data: { status: 'Active' },
   });
+};
+
+const startThesisRound = async (id) => {
+  return await prisma.thesis_rounds.update({
+    where: { id: parseInt(id) },
+    data: { status: 'In Progress' },
+  });
+};
+
+const autoUpdateThesisRoundStatus = async () => {
+  const now = new Date();
+  console.log('Checking thesis rounds for status update at:', now);
+
+  // Chuyển từ Active sang In Progress khi qua registration_deadline
+  const roundsToStart = await prisma.thesis_rounds.findMany({
+    where: {
+      status: 'Active',
+      registration_deadline: {
+        lte: now,
+      },
+    },
+  });
+
+  for (const round of roundsToStart) {
+    await prisma.thesis_rounds.update({
+      where: { id: round.id },
+      data: { status: 'In Progress' },
+    });
+    console.log(`Updated thesis round ${round.round_code} to In Progress`);
+  }
+
+  return { updated: roundsToStart.length };
 };
 
 const assignInstructors = async (id, data) => {
@@ -114,6 +161,22 @@ const getThesisRounds = async () => {
   });
 };
 
+const getActiveThesisRounds = async () => {
+  return await prisma.thesis_rounds.findMany({
+    where: {
+      status: {
+        in: ['Active', 'ACTIVE'],
+      },
+    },
+    include: {
+      thesis_round_rules: true,
+      faculties: true,
+      departments: true,
+    },
+    orderBy: { created_at: 'desc' },
+  });
+};
+
 const getThesisRoundById = async (id) => {
   const thesisRound = await prisma.thesis_rounds.findUnique({
     where: { id: parseInt(id) },
@@ -139,9 +202,12 @@ const getThesisRoundById = async (id) => {
 module.exports = {
   createThesisRound,
   activateThesisRound,
+  startThesisRound,
+  autoUpdateThesisRoundStatus,
   assignInstructors,
   assignClasses,
   addGuidanceProcess,
   getThesisRounds,
+  getActiveThesisRounds,
   getThesisRoundById,
 };

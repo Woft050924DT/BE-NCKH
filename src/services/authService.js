@@ -27,17 +27,47 @@ const login = async (username, password) => {
   let role = null;
   let userInfo = null;
 
+  // Check user role assignments first
+  const roleAssignments = await prisma.user_role_assignments.findMany({
+    where: { 
+      user_id: user.id,
+      status: true,
+    },
+    include: {
+      user_roles: true,
+    },
+  });
+
+  if (roleAssignments.length > 0) {
+    // Get the highest priority role (ADMIN > DEPARTMENT_HEAD > INSTRUCTOR > STUDENT)
+    const rolePriority = ['ADMIN', 'DEPARTMENT_HEAD', 'INSTRUCTOR', 'STUDENT'];
+    for (const roleCode of rolePriority) {
+      const assignment = roleAssignments.find(ra => ra.user_roles.role_code === roleCode);
+      if (assignment) {
+        role = roleCode.toLowerCase();
+        break;
+      }
+    }
+  }
+
+  // Get additional info based on role
   const student = await prisma.students.findUnique({
     where: { user_id: user.id },
-    include: { classes: true },
+    include: { 
+      classes: { 
+        include: { majors: true } 
+      } 
+    },
   });
 
   if (student) {
-    role = 'student';
     userInfo = {
       studentId: student.id,
       studentCode: student.student_code,
-      className: student.classes.class_name,
+      className: student.classes?.class_name,
+      majorName: student.classes?.majors?.major_name,
+      gpa: student.gpa,
+      creditsEarned: student.credits_earned,
     };
   }
 
@@ -47,11 +77,13 @@ const login = async (username, password) => {
   });
 
   if (instructor) {
-    role = 'instructor';
     userInfo = {
+      ...userInfo,
       instructorId: instructor.id,
       instructorCode: instructor.instructor_code,
-      departmentName: instructor.departments_instructors_department_idTodepartments.department_name,
+      departmentName: instructor.departments_instructors_department_idTodepartments?.department_name,
+      degree: instructor.degree,
+      academicTitle: instructor.academic_title,
     };
   }
 
@@ -82,8 +114,13 @@ const getProfile = async (user_id, role) => {
     throw new Error('Thiếu user_id');
   }
 
+  const parsedUserId = parseInt(user_id);
+  if (isNaN(parsedUserId)) {
+    throw new Error('user_id không hợp lệ');
+  }
+
   const user = await prisma.users.findUnique({
-    where: { id: parseInt(user_id) },
+    where: { id: parsedUserId },
     select: {
       id: true,
       email: true,
@@ -102,27 +139,31 @@ const getProfile = async (user_id, role) => {
 
   if (role === 'student') {
     const student = await prisma.students.findUnique({
-      where: { user_id: parseInt(user_id) },
+      where: { user_id: parsedUserId },
       include: { classes: true, majors: true },
     });
-    additionalInfo = {
-      studentCode: student.student_code,
-      className: student.classes.class_name,
-      majorName: student.majors.major_name,
-      gpa: student.gpa,
-      creditsEarned: student.credits_earned,
-    };
+    if (student) {
+      additionalInfo = {
+        studentCode: student.student_code,
+        className: student.classes?.class_name,
+        majorName: student.majors?.major_name,
+        gpa: student.gpa,
+        creditsEarned: student.credits_earned,
+      };
+    }
   } else if (role === 'instructor') {
     const instructor = await prisma.instructors.findUnique({
-      where: { user_id: parseInt(user_id) },
+      where: { user_id: parsedUserId },
       include: { departments_instructors_department_idTodepartments: true },
     });
-    additionalInfo = {
-      instructorCode: instructor.instructor_code,
-      departmentName: instructor.departments_instructors_department_idTodepartments.department_name,
-      degree: instructor.degree,
-      academicTitle: instructor.academic_title,
-    };
+    if (instructor) {
+      additionalInfo = {
+        instructorCode: instructor.instructor_code,
+        departmentName: instructor.departments_instructors_department_idTodepartments?.department_name,
+        degree: instructor.degree,
+        academicTitle: instructor.academic_title,
+      };
+    }
   }
 
   return {

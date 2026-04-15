@@ -18,8 +18,7 @@ const getThesisGroups = async (req, res) => {
     res.json(result);
   } catch (error) {
     console.error('Get thesis groups error:', error);
-    const statusCode = error.message.includes('Không tìm thấy') ? 403 : 500;
-    res.status(statusCode).json({ error: error.message || 'Lỗi lấy danh sách nhóm' });
+    res.status(500).json({ error: 'Lỗi lấy danh sách nhóm' });
   }
 };
 

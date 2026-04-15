@@ -7,6 +7,7 @@ const prisma = require('./src/config/database');
 const authRoutes = require('./src/routes/authRoutes');
 const thesisRoundRoutes = require('./src/routes/thesisRoundRoutes');
 const topicRegistrationRoutes = require('./src/routes/topicRegistrationRoutes');
+const thesisRoundService = require('./src/services/thesisRoundService');
 const thesisGroupRoutes = require('./src/routes/thesisGroupRoutes');
 const gradingRoutes = require('./src/routes/gradingRoutes');
 const reportRoutes = require('./src/routes/reportRoutes');
@@ -24,7 +25,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use('/api/auth', authRoutes);
-app.use('/api/admin/thesis-rounds', thesisRoundRoutes);
+app.use('/api/department-head/thesis-rounds', thesisRoundRoutes);
 app.use('/api/topic-registrations', topicRegistrationRoutes);
 app.use('/api/thesis-groups', thesisGroupRoutes);
 app.use('/api', gradingRoutes);
@@ -38,7 +39,7 @@ app.get('/', (req, res) => {
     version: '1.0.0',
     endpoints: {
       auth: '/api/auth',
-      thesisRounds: '/api/admin/thesis-rounds',
+      thesisRounds: '/api/department-head/thesis-rounds',
       topicRegistrations: '/api/topic-registrations',
       thesisGroups: '/api/thesis-groups',
       grading: '/api/review-assignments, /api/weekly-reports',
@@ -53,7 +54,7 @@ app.use(errorHandler);
 app.listen(PORT, async () => {
   console.log(`Server đang chạy trên port ${PORT}`);
   console.log(`Frontend URL: ${process.env.FRONTEND_URL}`);
-  
+
   // Test database connection
   try {
     await prisma.$connect();
@@ -61,4 +62,24 @@ app.listen(PORT, async () => {
   } catch (error) {
     console.error('Lỗi kết nối database:', error);
   }
+
+  // Cron job: Cập nhật trạng thái đợt đồ án mỗi giờ
+  setInterval(async () => {
+    try {
+      console.log('Running auto-update thesis round status...');
+      await thesisRoundService.autoUpdateThesisRoundStatus();
+    } catch (error) {
+      console.error('Error in auto-update thesis round status:', error);
+    }
+  }, 60 * 60 * 1000); // Chạy mỗi giờ (60 * 60 * 1000 ms)
+
+  // Chạy ngay khi khởi động server
+  setTimeout(async () => {
+    try {
+      console.log('Running initial auto-update thesis round status...');
+      await thesisRoundService.autoUpdateThesisRoundStatus();
+    } catch (error) {
+      console.error('Error in initial auto-update thesis round status:', error);
+    }
+  }, 5000); // Chạy sau 5 giây khi server khởi động
 });

@@ -111,6 +111,36 @@ const getInstructorById = async (id) => {
   return instructor;
 };
 
+const getInstructorByUserId = async (user_id) => {
+  const instructor = await prisma.instructors.findUnique({
+    where: { user_id: parseInt(user_id) },
+    include: {
+      users: {
+        select: {
+          id: true,
+          full_name: true,
+          email: true,
+          phone: true,
+          avatar: true,
+        },
+      },
+      departments_instructors_department_idTodepartments: {
+        select: {
+          id: true,
+          department_code: true,
+          department_name: true,
+        },
+      },
+    },
+  });
+
+  if (!instructor) {
+    throw new Error('Không tìm thấy giảng viên');
+  }
+
+  return instructor;
+};
+
 const createInstructor = async (data) => {
   const {
     instructor_code,
@@ -193,5 +223,6 @@ const createInstructor = async (data) => {
 module.exports = {
   getInstructors,
   getInstructorById,
+  getInstructorByUserId,
   createInstructor,
 };

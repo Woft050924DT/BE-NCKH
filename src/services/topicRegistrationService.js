@@ -17,6 +17,39 @@ const createProposedTopic = async (data) => {
     instructor_id,
   } = data;
 
+  console.log('Received group_mode:', group_mode, 'Type:', typeof group_mode);
+
+  // Check existing group_mode values in database
+  const existingRules = await prisma.proposed_topic_rules.findMany({
+    select: { group_mode: true },
+    distinct: ['group_mode'],
+  });
+  console.log('Existing group_mode values in DB:', existingRules.map(r => r.group_mode));
+
+  const validGroupModes = ['BOTH', 'GROUP', 'INDIVIDUAL'];
+  
+  let normalizedGroupMode = 'BOTH';
+  if (group_mode) {
+    normalizedGroupMode = String(group_mode).trim().toUpperCase();
+  }
+
+  console.log('Normalized group_mode:', normalizedGroupMode);
+
+  if (!validGroupModes.includes(normalizedGroupMode)) {
+    throw new Error(`group_mode phải là BOTH, GROUP hoặc INDIVIDUAL. Nhận được: "${normalizedGroupMode}"`);
+  }
+
+  const existingTopic = await prisma.proposed_topics.findFirst({
+    where: {
+      topic_code,
+      thesis_round_id: parseInt(thesis_round_id),
+    },
+  });
+
+  if (existingTopic) {
+    throw new Error('Mã đề tài đã tồn tại trong đợt đồ án này');
+  }
+
   const instructor = await prisma.instructors.findUnique({
     where: { id: parseInt(instructor_id) },
   });
@@ -39,10 +72,12 @@ const createProposedTopic = async (data) => {
     },
   });
 
+  console.log('Creating proposed_topic_rules with group_mode:', normalizedGroupMode);
+
   await prisma.proposed_topic_rules.create({
     data: {
       proposed_topic_id: proposedTopic.id,
-      group_mode: group_mode || 'BOTH',
+      group_mode: normalizedGroupMode,
       min_members: min_members || 1,
       max_members: max_members || 4,
       reason,
@@ -194,7 +229,6 @@ const getPendingRegistrations = async (filters) => {
         },
       },
       proposed_topics: true,
-      thesis_rounds: true,
     },
     orderBy: { registration_date: 'desc' },
   });

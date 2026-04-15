@@ -23,6 +23,18 @@ const getInstructorById = async (req, res) => {
   }
 };
 
+const getInstructorByUserId = async (req, res) => {
+  try {
+    const { user_id } = req.params;
+    const result = await instructorService.getInstructorByUserId(user_id);
+    res.json(result);
+  } catch (error) {
+    console.error('Get instructor by user ID error:', error);
+    const statusCode = error.message.includes('Không tìm thấy') ? 404 : 500;
+    res.status(statusCode).json({ error: error.message || 'Lỗi lấy thông tin giảng viên' });
+  }
+};
+
 const createInstructor = async (req, res) => {
   try {
     const result = await instructorService.createInstructor(req.body);
@@ -37,5 +49,6 @@ const createInstructor = async (req, res) => {
 module.exports = {
   getInstructors,
   getInstructorById,
+  getInstructorByUserId,
   createInstructor,
 };

@@ -599,7 +599,7 @@ model theses {
   supervision_comments  supervision_comments[]
   instructors           instructors            @relation(fields: [supervisor_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   thesis_groups         thesis_groups          @relation(fields: [thesis_group_id, thesis_round_id], references: [id, thesis_round_id], onDelete: NoAction, onUpdate: NoAction)
-  topic_registrations   topic_registrations    @relation(fields: [topic_registration_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  topic_registrations   topic_registrations    @relation(fields: [topic_registration_id, thesis_group_id], references: [id, thesis_group_id], onDelete: NoAction, onUpdate: NoAction)
   thesis_members        thesis_members[]
   thesis_tasks          thesis_tasks[]
   weekly_reports        weekly_reports[]

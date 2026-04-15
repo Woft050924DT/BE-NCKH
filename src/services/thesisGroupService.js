@@ -38,17 +38,11 @@ const createThesisGroup = async (data) => {
 const getThesisGroups = async (filters) => {
   const { thesis_round_id, student_id } = filters;
 
-  const student = await prisma.students.findUnique({
-    where: { id: parseInt(student_id) },
-  });
-
-  if (!student) {
-    throw new Error('Không tìm thấy sinh viên');
+  const where = {};
+  
+  if (thesis_round_id) {
+    where.thesis_round_id = parseInt(thesis_round_id);
   }
-
-  const where = thesis_round_id 
-    ? { thesis_round_id: parseInt(thesis_round_id) }
-    : {};
 
   const groups = await prisma.thesis_groups.findMany({
     where,
@@ -146,12 +140,16 @@ const rejectInvitation = async (id, data) => {
 const getInvitations = async (filters) => {
   const { student_id } = filters;
 
+  if (!student_id) {
+    return [];
+  }
+
   const student = await prisma.students.findUnique({
     where: { id: parseInt(student_id) },
   });
 
   if (!student) {
-    throw new Error('Không tìm thấy sinh viên');
+    return [];
   }
 
   const invitations = await prisma.thesis_group_invitations.findMany({
