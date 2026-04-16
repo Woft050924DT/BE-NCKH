@@ -75,7 +75,7 @@ const getThesisTasks = async (filters) => {
   return tasks;
 };
 
-const createWeeklyReport = async (data) => {
+const createWeeklyReport = async (data, user) => {
   const {
     thesis_id,
     week_number,
@@ -83,11 +83,16 @@ const createWeeklyReport = async (data) => {
     progress_percentage,
     challenges,
     next_plan,
-    student_id,
   } = data;
 
+  const studentId = user?.studentId;
+
+  if (!studentId) {
+    throw new Error('Không tìm thấy sinh viên');
+  }
+
   const student = await prisma.students.findUnique({
-    where: { id: parseInt(student_id) },
+    where: { id: studentId },
   });
 
   if (!student) {
@@ -215,6 +220,67 @@ const getThesisProgress = async (thesisId) => {
   };
 };
 
+const getIndividualThesisReports = async (filters) => {
+  const { student_id } = filters;
+
+  // Get individual theses for the student
+  const individualTheses = await prisma.theses.findMany({
+    where: {
+      thesis_groups: {
+        group_type: 'INDIVIDUAL',
+      },
+      ...(student_id ? {
+        thesis_members: {
+          some: {
+            student_id: parseInt(student_id),
+            is_active: true,
+          },
+        },
+      } : {}),
+    },
+    include: {
+      thesis_groups: {
+        include: {
+          thesis_group_members: {
+            include: {
+              students: {
+                include: { users: true },
+              },
+            },
+          },
+        },
+      },
+      thesis_members: {
+        where: { is_active: true },
+        include: {
+          students: {
+            include: { users: true },
+          },
+        },
+      },
+      weekly_reports: {
+        include: {
+          weekly_report_individual_contributions: {
+            include: {
+              students: {
+                include: { users: true },
+              },
+            },
+          },
+          students: {
+            include: { users: true },
+          },
+        },
+        orderBy: { week_number: 'asc' },
+      },
+      thesis_rounds: true,
+    },
+    orderBy: { created_at: 'desc' },
+  });
+
+  return individualTheses;
+};
+
 module.exports = {
   createThesisTask,
   updateThesisTask,
@@ -225,4 +291,5 @@ module.exports = {
   addIndividualContribution,
   submitFinalReport,
   getThesisProgress,
+  getIndividualThesisReports,
 };

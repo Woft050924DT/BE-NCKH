@@ -34,7 +34,7 @@ const createThesisRound = async (data, user) => {
         department_id: parseInt(departmentId),
         semester: parseInt(semester),
         academic_year: academicYear,
-        status: { in: ['Preparing', 'Open', 'In Progress'] },
+        status: { in: ['Preparing', 'Open', 'ACTIVE'] },
       },
     });
 
@@ -86,36 +86,14 @@ const activateThesisRound = async (id) => {
   });
 };
 
-const startThesisRound = async (id) => {
-  return await prisma.thesis_rounds.update({
-    where: { id: parseInt(id) },
-    data: { status: 'In Progress' },
-  });
-};
 
 const autoUpdateThesisRoundStatus = async () => {
   const now = new Date();
   console.log('Checking thesis rounds for status update at:', now);
 
-  // Chuyển từ ACTIVE sang In Progress khi qua registration_deadline
-  const roundsToStart = await prisma.thesis_rounds.findMany({
-    where: {
-      status: 'ACTIVE',
-      registration_deadline: {
-        lte: now,
-      },
-    },
-  });
+  // No automatic status update needed as we only use ACTIVE and Preparing
 
-  for (const round of roundsToStart) {
-    await prisma.thesis_rounds.update({
-      where: { id: round.id },
-      data: { status: 'In Progress' },
-    });
-    console.log(`Updated thesis round ${round.round_code} to In Progress`);
-  }
-
-  return { updated: roundsToStart.length };
+  return { updated: 0 };
 };
 
 const assignInstructors = async (id, data, user) => {
@@ -305,7 +283,7 @@ const getThesisRoundById = async (id) => {
 
 const updateRoundStatus = async (roundId, status, user) => {
   try {
-    const validStatuses = ['Preparing', 'Open', 'Closed', 'Completed', 'In Progress'];
+    const validStatuses = ['Preparing', 'Open', 'Closed', 'Completed', 'ACTIVE'];
     if (!validStatuses.includes(status)) {
       throw new HttpError(400, 'Trạng thái không hợp lệ');
     }
@@ -321,8 +299,8 @@ const updateRoundStatus = async (roundId, status, user) => {
     // Validate status transition
     const validTransitions = {
       'Preparing': ['Open'],
-      'Open': ['Closed', 'In Progress'],
-      'In Progress': ['Completed'],
+      'Open': ['Closed', 'ACTIVE'],
+      'ACTIVE': ['Completed'],
       'Closed': [],
       'Completed': [],
     };
@@ -348,7 +326,6 @@ const updateRoundStatus = async (roundId, status, user) => {
 module.exports = {
   createThesisRound,
   activateThesisRound,
-  startThesisRound,
   autoUpdateThesisRoundStatus,
   assignInstructors,
   getInstructorAssignments,

@@ -35,7 +35,7 @@ const getThesisTasks = async (req, res) => {
 
 const createWeeklyReport = async (req, res) => {
   try {
-    const result = await reportService.createWeeklyReport(req.body);
+    const result = await reportService.createWeeklyReport(req.body, req.user);
     res.status(201).json(result);
   } catch (error) {
     console.error('Create weekly report error:', error);
@@ -99,6 +99,25 @@ const getThesisProgress = async (req, res) => {
   }
 };
 
+const getIndividualThesisReports = async (req, res) => {
+  try {
+    const { student_id } = req.query;
+    const result = await reportService.getIndividualThesisReports({ student_id });
+    res.json({
+      success: true,
+      data: result,
+      message: 'Lấy danh sách báo cáo đồ án cá nhân thành công'
+    });
+  } catch (error) {
+    console.error('Get individual thesis reports error:', error);
+    res.status(500).json({
+      success: false,
+      data: null,
+      message: 'Lỗi lấy danh sách báo cáo đồ án cá nhân'
+    });
+  }
+};
+
 module.exports = {
   createThesisTask,
   updateThesisTask,
@@ -109,4 +128,5 @@ module.exports = {
   addIndividualContribution,
   submitFinalReport,
   getThesisProgress,
+  getIndividualThesisReports,
 };

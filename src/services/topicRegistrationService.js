@@ -421,9 +421,22 @@ const headApproveRegistration = async (id, data) => {
       head_override_max_members,
       head_override_reason,
     },
+    include: {
+      proposed_topics: true,
+    },
   });
 
   if (status === 'APPROVED' && registration.instructor_status === 'APPROVED') {
+    // Check if thesis already exists for this registration
+    const existingThesis = await prisma.theses.findUnique({
+      where: { topic_registration_id: registration.id },
+    });
+
+    if (existingThesis) {
+      // Thesis already exists, skip creation
+      return registration;
+    }
+
     const thesisCode = `THESIS-${registration.thesis_round_id}-${Date.now()}`;
 
     const thesis = await prisma.theses.create({
@@ -458,7 +471,6 @@ const headApproveRegistration = async (id, data) => {
             thesis_id: thesis.id,
             student_id: member.student_id,
             role: member.role,
-            join_date: new Date(),
           },
         })
       )

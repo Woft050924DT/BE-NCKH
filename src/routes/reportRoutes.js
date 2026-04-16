@@ -10,6 +10,7 @@ const {
   addIndividualContribution,
   submitFinalReport,
   getThesisProgress,
+  getIndividualThesisReports,
 } = require('../controllers/reportController');
 
 router.post('/thesis-tasks', createThesisTask);
@@ -21,5 +22,6 @@ router.get('/weekly-reports', getWeeklyReports);
 router.post('/weekly-report-contributions', addIndividualContribution);
 router.put('/theses/:id/submit-final-report', submitFinalReport);
 router.get('/thesis-progress/:thesisId', getThesisProgress);
+router.get('/individual-thesis-reports', getIndividualThesisReports);
 
 module.exports = router;

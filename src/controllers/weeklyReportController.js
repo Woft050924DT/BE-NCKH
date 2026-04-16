@@ -4,7 +4,7 @@ const weeklyReportService = require('../services/weeklyReportService');
 const createWeeklyReport = async (req, res) => {
   try {
     const { thesisId } = req.params;
-    const result = await weeklyReportService.createWeeklyReport(thesisId, req.body, req.user);
+    const result = await weeklyReportService.createWeeklyReport(thesisId, req.body);
     res.status(201).json({
       success: true,
       data: result,

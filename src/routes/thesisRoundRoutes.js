@@ -4,7 +4,6 @@ const { auth } = require('../middleware/auth');
 const {
   createThesisRound,
   activateThesisRound,
-  startThesisRound,
   autoUpdateThesisRoundStatus,
   assignInstructors,
   getInstructorAssignments,
@@ -18,7 +17,6 @@ const {
 
 router.post('/', auth, createThesisRound);
 router.put('/:id/activate', auth, activateThesisRound);
-router.put('/:id/start', auth, startThesisRound);
 router.post('/auto-update-status', autoUpdateThesisRoundStatus);
 router.post('/:id/assign-instructors', assignInstructors);
 router.get('/:id/instructors', getInstructorAssignments);

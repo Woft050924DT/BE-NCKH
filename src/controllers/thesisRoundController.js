@@ -52,32 +52,6 @@ const activateThesisRound = async (req, res) => {
   }
 };
 
-const startThesisRound = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const result = await thesisRoundService.startThesisRound(id);
-    res.json({
-      success: true,
-      data: result,
-      message: 'Đợt đồ án đã được bắt đầu thành công'
-    });
-  } catch (error) {
-    if (error instanceof HttpError) {
-      return res.status(error.statusCode).json({
-        success: false,
-        data: null,
-        message: error.message
-      });
-    }
-    console.error('Start thesis round error:', error);
-    res.status(500).json({
-      success: false,
-      data: null,
-      message: 'Lỗi bắt đầu đợt đồ án'
-    });
-  }
-};
-
 const autoUpdateThesisRoundStatus = async (req, res) => {
   try {
     const result = await thesisRoundService.autoUpdateThesisRoundStatus();
@@ -314,7 +288,6 @@ const updateRoundStatus = async (req, res) => {
 module.exports = {
   createThesisRound,
   activateThesisRound,
-  startThesisRound,
   autoUpdateThesisRoundStatus,
   assignInstructors,
   getInstructorAssignments,

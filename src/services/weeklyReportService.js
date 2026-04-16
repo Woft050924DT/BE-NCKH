@@ -1,7 +1,7 @@
 const HttpError = require('../utils/HttpError');
 const prisma = require('../config/database');
 
-const createWeeklyReport = async (thesisId, data, user) => {
+const createWeeklyReport = async (thesisId, data) => {
   try {
     const {
       weekNumber,
@@ -17,9 +17,6 @@ const createWeeklyReport = async (thesisId, data, user) => {
     // Pre-conditions
     const thesis = await prisma.theses.findUnique({
       where: { id: parseInt(thesisId) },
-      include: {
-        thesis_rounds: true,
-      },
     });
 
     if (!thesis) {
@@ -30,22 +27,15 @@ const createWeeklyReport = async (thesisId, data, user) => {
       throw new HttpError(400, 'Đồ án không ở trạng thái đang thực hiện');
     }
 
-    if (thesis.thesis_rounds.report_submission_deadline && new Date() > new Date(thesis.thesis_rounds.report_submission_deadline)) {
+    // Get thesis_round to check deadline
+    const thesisRound = await prisma.thesis_rounds.findUnique({
+      where: { id: thesis.thesis_round_id },
+    });
+
+    if (thesisRound?.report_submission_deadline && new Date() > new Date(thesisRound.report_submission_deadline)) {
       throw new HttpError(400, 'Đã quá hạn nộp báo cáo');
     }
 
-    // Verify student is active thesis member
-    const thesisMember = await prisma.thesis_members.findFirst({
-      where: {
-        thesis_id: parseInt(thesisId),
-        student_id: parseInt(studentId),
-        is_active: true,
-      },
-    });
-
-    if (!thesisMember) {
-      throw new HttpError(403, 'Bạn không phải là thành viên của đồ án này');
-    }
 
     // No report exists for this weekNumber on this thesis
     const existingReport = await prisma.weekly_reports.findUnique({
