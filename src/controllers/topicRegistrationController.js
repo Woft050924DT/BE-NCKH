@@ -57,6 +57,18 @@ const getPendingRegistrations = async (req, res) => {
   }
 };
 
+const getPendingRegistrationsForHead = async (req, res) => {
+  try {
+    const { department_id } = req.query;
+    const result = await topicRegistrationService.getPendingRegistrationsForHead({ department_id });
+    res.json(result);
+  } catch (error) {
+    console.error('Get pending registrations for head error:', error);
+    const statusCode = error.message.includes('Không tìm thấy') || error.message.includes('không hợp lệ') ? 403 : 500;
+    res.status(statusCode).json({ error: error.message || 'Lỗi lấy danh sách đăng ký chờ trưởng bộ môn duyệt' });
+  }
+};
+
 const approveRegistration = async (req, res) => {
   try {
     const { id } = req.params;
@@ -86,6 +98,7 @@ module.exports = {
   createTopicRegistration,
   getTopicRegistrations,
   getPendingRegistrations,
+  getPendingRegistrationsForHead,
   approveRegistration,
   headApproveRegistration,
 };

@@ -51,19 +51,46 @@ const createProposedTopic = async (data) => {
     throw new Error('Mã đề tài đã tồn tại trong đợt đồ án này');
   }
 
-  const instructor = await prisma.instructors.findUnique({
-    where: { id: parseInt(instructor_id) },
+  // Try to find instructor by user_id first, then by instructor_id
+  let finalInstructorId = parseInt(instructor_id);
+  const instructorByUserId = await prisma.instructors.findUnique({
+    where: { user_id: finalInstructorId },
   });
 
-  if (!instructor) {
-    throw new Error('Không tìm thấy giảng viên');
+  if (instructorByUserId) {
+    finalInstructorId = instructorByUserId.id;
+  } else {
+    // Try to find by instructor_id directly
+    const instructorById = await prisma.instructors.findUnique({
+      where: { id: finalInstructorId },
+    });
+    if (!instructorById) {
+      // If neither exists, create instructor record
+      const department = await prisma.departments.findFirst();
+      if (!department) {
+        throw new Error('Không tìm thấy bộ môn để tạo giảng viên');
+      }
+
+      const newInstructor = await prisma.instructors.create({
+        data: {
+          user_id: finalInstructorId,
+          instructor_code: `GV${finalInstructorId}`,
+          department_id: department.id,
+          degree: 'N/A',
+          academic_title: 'Giảng Viên',
+          status: true,
+        },
+      });
+      finalInstructorId = newInstructor.id;
+      console.log(`Created new instructor record with id: ${finalInstructorId}`);
+    }
   }
 
   const proposedTopic = await prisma.proposed_topics.create({
     data: {
       topic_code,
       topic_title,
-      instructor_id: instructor.id,
+      instructor_id: finalInstructorId,
       thesis_round_id,
       topic_description,
       objectives,
@@ -262,8 +289,8 @@ const getPendingRegistrations = async (filters) => {
   const { instructor_id } = filters;
 
   const parsedInstructorId = parseInt(instructor_id);
-  if (isNaN(parsedInstructorId)) {
-    throw new Error('instructor_id không hợp lệ');
+  if (isNaN(parsedInstructorId) || parsedInstructorId === 0) {
+    return [];
   }
 
   const instructor = await prisma.instructors.findUnique({
@@ -271,7 +298,7 @@ const getPendingRegistrations = async (filters) => {
   });
 
   if (!instructor) {
-    throw new Error('Không tìm thấy giảng viên');
+    return [];
   }
 
   const registrations = await prisma.topic_registrations.findMany({
@@ -299,24 +326,75 @@ const getPendingRegistrations = async (filters) => {
   return registrations;
 };
 
+const getPendingRegistrationsForHead = async (filters) => {
+  const { department_id } = filters;
+
+  const parsedDepartmentId = parseInt(department_id);
+  if (isNaN(parsedDepartmentId) || parsedDepartmentId === 0) {
+    return [];
+  }
+
+  const department = await prisma.departments.findUnique({
+    where: { id: parsedDepartmentId },
+  });
+
+  if (!department) {
+    return [];
+  }
+
+  const registrations = await prisma.topic_registrations.findMany({
+    where: {
+      head_status: 'PENDING',
+      instructors: {
+        department_id: department.id,
+      },
+    },
+    include: {
+      thesis_groups: {
+        include: {
+          thesis_group_members: {
+            include: {
+              students: {
+                include: { users: true, classes: true },
+              },
+            },
+          },
+        },
+      },
+      proposed_topics: true,
+      instructors: {
+        include: {
+          users: true,
+          departments: true,
+        },
+      },
+    },
+    orderBy: { registration_date: 'desc' },
+  });
+
+  return registrations;
+};
+
 const approveRegistration = async (id, data) => {
   const { status, rejection_reason, instructor_id } = data;
 
-  const instructor = await prisma.instructors.findUnique({
-    where: { id: parseInt(instructor_id) },
-  });
+  const updateData = {
+    instructor_status: status,
+    instructor_rejection_reason: rejection_reason,
+    instructor_approval_date: status === 'APPROVED' ? new Date() : null,
+  };
 
-  if (!instructor) {
-    throw new Error('Không tìm thấy giảng viên');
+  // Nếu giảng viên approve, chuyển tiếp cho trưởng bộ môn duyệt
+  if (status === 'APPROVED') {
+    updateData.head_status = 'PENDING';
+  } else if (status === 'REJECTED') {
+    // Nếu giảng viên reject, không cần trưởng bộ môn duyệt
+    updateData.head_status = null;
   }
 
   const registration = await prisma.topic_registrations.update({
     where: { id: parseInt(id) },
-    data: {
-      instructor_status: status,
-      instructor_rejection_reason: rejection_reason,
-      instructor_approval_date: status === 'APPROVED' ? new Date() : null,
-    },
+    data: updateData,
   });
 
   return registration;
@@ -396,6 +474,7 @@ module.exports = {
   createTopicRegistration,
   getTopicRegistrations,
   getPendingRegistrations,
+  getPendingRegistrationsForHead,
   approveRegistration,
   headApproveRegistration,
 };

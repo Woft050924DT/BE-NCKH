@@ -85,6 +85,12 @@ const login = async (username, password) => {
       degree: instructor.degree,
       academicTitle: instructor.academic_title,
     };
+  } else if (role === 'instructor' || role === 'department_head') {
+    // Fallback: use user.id if instructor record doesn't exist
+    userInfo = {
+      ...userInfo,
+      instructorId: user.id,
+    };
   }
 
   const token = generateToken({
