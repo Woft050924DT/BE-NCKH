@@ -161,9 +161,9 @@ const provideFeedback = async (reportId, data, user) => {
     const updatedReport = await prisma.weekly_reports.update({
       where: { id: parseInt(reportId) },
       data: {
-        instructor_status,
+        instructor_status: instructorStatus,
         instructor_feedback: instructorFeedback,
-        weekly_score: weeklyScore,
+        weekly_score: weeklyScore !== undefined ? String(weeklyScore) : null,
         feedback_date: new Date(),
       },
     });
