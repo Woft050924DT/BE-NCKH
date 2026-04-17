@@ -19,6 +19,7 @@ const groupRoutes = require('./src/routes/groupRoutes');
 const registrationRoutes = require('./src/routes/registrationRoutes');
 const weeklyReportRoutes = require('./src/routes/weeklyReportRoutes');
 const studentRoutes = require('./src/routes/studentRoutes');
+const councilRoutes = require('./src/routes/councilRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -34,6 +35,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/department-head/thesis-rounds', thesisRoundRoutes);
 app.use('/api/topic-registrations', topicRegistrationRoutes);
 app.use('/api/thesis-groups', thesisGroupRoutes);
+app.use('/api/councils', councilRoutes);
 app.use('/api', gradingRoutes);
 app.use('/api', reportRoutes);
 app.use('/api', defenseRoutes);
@@ -62,6 +64,7 @@ app.get('/', (req, res) => {
       reports: '/api/thesis-tasks, /api/weekly-reports',
       defense: '/api/defense-councils, /api/defense-assignments',
       students: '/api/students/thesis-rounds, /api/students/instructors',
+      councils: '/api/councils',
     },
   });
 });

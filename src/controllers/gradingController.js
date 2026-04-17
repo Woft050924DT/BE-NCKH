@@ -67,6 +67,28 @@ const getThesisScores = async (req, res) => {
   }
 };
 
+const getSupervisionStudents = async (req, res) => {
+  try {
+    const { instructor_id, thesis_round_id, round_code } = req.query;
+    const result = await gradingService.getSupervisionStudents(instructor_id, thesis_round_id, round_code);
+    res.json(result);
+  } catch (error) {
+    console.error('Get supervision students error:', error);
+    res.status(500).json({ error: error.message || 'Lỗi lấy danh sách học sinh hướng dẫn' });
+  }
+};
+
+const getReviewStudents = async (req, res) => {
+  try {
+    const { instructor_id, thesis_round_id, round_code } = req.query;
+    const result = await gradingService.getReviewStudents(instructor_id, thesis_round_id, round_code);
+    res.json(result);
+  } catch (error) {
+    console.error('Get review students error:', error);
+    res.status(500).json({ error: error.message || 'Lỗi lấy danh sách học sinh phản biện' });
+  }
+};
+
 module.exports = {
   createReviewAssignment,
   submitReviewResult,
@@ -74,4 +96,6 @@ module.exports = {
   submitPeerEvaluation,
   reviewWeeklyReport,
   getThesisScores,
+  getSupervisionStudents,
+  getReviewStudents,
 };

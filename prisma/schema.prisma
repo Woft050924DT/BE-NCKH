@@ -7,6 +7,47 @@ datasource db {
   provider = "postgresql"
 }
 
+model FileDB {
+  id         Int       @id @default(autoincrement())
+  slug       String    @db.VarChar(255)
+  file_type  Int       @default(1)
+  file_tail  String    @db.VarChar(50)
+  id_folder  Int?
+  id_user    Int
+  alt        String?   @db.VarChar(500)
+  caption    String?
+  status     Int       @default(1)
+  full_link  String    @db.VarChar(500)
+  created_at DateTime  @default(now()) @db.Timestamp(6)
+  updated_at DateTime  @db.Timestamp(6)
+  delete_at  DateTime? @db.Timestamp(6)
+  FolderDB   FolderDB? @relation(fields: [id_folder], references: [id], onUpdate: NoAction)
+  users      users     @relation(fields: [id_user], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([delete_at])
+  @@index([id_folder])
+  @@index([id_user])
+  @@index([status])
+}
+
+model FolderDB {
+  id             Int        @id @default(autoincrement())
+  name           String     @db.VarChar(255)
+  id_parent      Int?
+  id_user        Int
+  status         Int        @default(1)
+  created_at     DateTime   @default(now()) @db.Timestamp(6)
+  updated_at     DateTime   @db.Timestamp(6)
+  FileDB         FileDB[]
+  FolderDB       FolderDB?  @relation("FolderDBToFolderDB", fields: [id_parent], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  other_FolderDB FolderDB[] @relation("FolderDBToFolderDB")
+  users          users      @relation(fields: [id_user], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([id_parent])
+  @@index([id_user])
+  @@index([status])
+}
+
 model blocked_users {
   id                                    Int       @id @default(autoincrement())
   blocker_id                            Int
@@ -109,7 +150,6 @@ model conversations {
   @@index([conversation_type_id], map: "idx_conversations_type")
 }
 
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model council_members {
   id                 Int              @id @default(autoincrement())
   defense_council_id Int
@@ -124,6 +164,127 @@ model council_members {
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model course_enrollments {
+  id                Int                 @id @default(autoincrement())
+  student_id        Int
+  course_section_id Int
+  enrollment_date   DateTime?           @default(now()) @db.Timestamp(6)
+  enrollment_type   String?             @default("NORMAL") @db.VarChar(20)
+  attempt_number    Int?                @default(1)
+  status            String?             @default("ENROLLED") @db.VarChar(30)
+  withdrawal_date   DateTime?           @db.Timestamp(6)
+  withdrawal_reason String?
+  notes             String?
+  created_at        DateTime?           @default(now()) @db.Timestamp(6)
+  updated_at        DateTime?           @default(now()) @db.Timestamp(6)
+  course_sections   course_sections     @relation(fields: [course_section_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  students          students            @relation(fields: [student_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  enrollment_grades enrollment_grades[]
+  final_grades      final_grades?
+
+  @@unique([student_id, course_section_id])
+  @@index([course_section_id], map: "idx_enrollments_section")
+  @@index([student_id, status], map: "idx_enrollments_student")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model course_prerequisites {
+  id                                                           Int     @id @default(autoincrement())
+  course_id                                                    Int
+  prerequisite_course_id                                       Int
+  prerequisite_type                                            String? @default("REQUIRED") @db.VarChar(20)
+  courses_course_prerequisites_course_idTocourses              courses @relation("course_prerequisites_course_idTocourses", fields: [course_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  courses_course_prerequisites_prerequisite_course_idTocourses courses @relation("course_prerequisites_prerequisite_course_idTocourses", fields: [prerequisite_course_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([course_id, prerequisite_course_id])
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model course_sections {
+  id                 Int                  @id @default(autoincrement())
+  section_code       String               @unique @db.VarChar(30)
+  course_id          Int
+  instructor_id      Int
+  academic_year      String               @db.VarChar(10)
+  semester           Int
+  max_students       Int?                 @default(50)
+  current_students   Int?                 @default(0)
+  room               String?              @db.VarChar(50)
+  schedule           String?
+  start_date         DateTime?            @db.Date
+  end_date           DateTime?            @db.Date
+  status             String?              @default("OPEN") @db.VarChar(30)
+  notes              String?
+  created_at         DateTime?            @default(now()) @db.Timestamp(6)
+  updated_at         DateTime?            @default(now()) @db.Timestamp(6)
+  course_enrollments course_enrollments[]
+  courses            courses              @relation(fields: [course_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  instructors        instructors          @relation(fields: [instructor_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  grade_components   grade_components[]
+
+  @@index([course_id], map: "idx_course_sections_course")
+  @@index([instructor_id], map: "idx_course_sections_instructor")
+  @@index([academic_year, semester, status], map: "idx_course_sections_semester")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model courses {
+  id                                                                        Int                    @id @default(autoincrement())
+  course_code                                                               String                 @unique @db.VarChar(20)
+  course_name                                                               String                 @db.VarChar(255)
+  department_id                                                             Int
+  credits                                                                   Int
+  theory_hours                                                              Int?                   @default(0)
+  practice_hours                                                            Int?                   @default(0)
+  course_type                                                               String?                @default("COMPULSORY") @db.VarChar(30)
+  description                                                               String?
+  prerequisites                                                             String?
+  status                                                                    Boolean?               @default(true)
+  created_at                                                                DateTime?              @default(now()) @db.Timestamp(6)
+  updated_at                                                                DateTime?              @default(now()) @db.Timestamp(6)
+  course_prerequisites_course_prerequisites_course_idTocourses              course_prerequisites[] @relation("course_prerequisites_course_idTocourses")
+  course_prerequisites_course_prerequisites_prerequisite_course_idTocourses course_prerequisites[] @relation("course_prerequisites_prerequisite_course_idTocourses")
+  course_sections                                                           course_sections[]
+  departments                                                               departments            @relation(fields: [department_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  curriculum_courses                                                        curriculum_courses[]
+
+  @@index([department_id], map: "idx_courses_department")
+}
+
+model curriculum {
+  id                 Int                  @id @default(autoincrement())
+  curriculum_code    String               @unique @db.VarChar(20)
+  curriculum_name    String               @db.VarChar(255)
+  major_id           Int
+  academic_year      String               @db.VarChar(10)
+  total_credits      Int
+  description        String?
+  status             Boolean?             @default(true)
+  created_at         DateTime?            @default(now()) @db.Timestamp(6)
+  updated_at         DateTime?            @default(now()) @db.Timestamp(6)
+  majors             majors               @relation(fields: [major_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  curriculum_courses curriculum_courses[]
+
+  @@index([major_id], map: "idx_curriculum_major")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model curriculum_courses {
+  id             Int        @id @default(autoincrement())
+  curriculum_id  Int
+  course_id      Int
+  semester_order Int
+  is_optional    Boolean?   @default(false)
+  group_code     String?    @db.VarChar(10)
+  notes          String?
+  courses        courses    @relation(fields: [course_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  curriculum     curriculum @relation(fields: [curriculum_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([curriculum_id, course_id])
+  @@index([course_id], map: "idx_curriculum_courses_course")
+  @@index([curriculum_id], map: "idx_curriculum_courses_curriculum")
+}
+
 model defense_assignments {
   id                 Int               @id @default(autoincrement())
   defense_council_id Int
@@ -141,7 +302,6 @@ model defense_assignments {
   @@index([thesis_id], map: "idx_defense_assignments_thesis")
 }
 
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model defense_councils {
   id                                                     Int                   @id @default(autoincrement())
   council_code                                           String                @unique @db.VarChar(50)
@@ -153,7 +313,7 @@ model defense_councils {
   start_time                                             DateTime?             @db.Time(6)
   end_time                                               DateTime?             @db.Time(6)
   venue                                                  String?               @db.VarChar(255)
-  status                                                 String?               @default("PREPARING") @db.VarChar(50)
+  status                                                 String?               @default("PREPARING") @db.VarChar(100)
   notes                                                  String?
   created_at                                             DateTime?             @default(now()) @db.Timestamp(6)
   updated_at                                             DateTime?             @default(now()) @db.Timestamp(6)
@@ -166,7 +326,6 @@ model defense_councils {
   @@index([thesis_round_id], map: "idx_defense_councils_round")
 }
 
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model defense_results {
   id                    Int                 @id @default(autoincrement())
   defense_assignment_id Int
@@ -191,6 +350,7 @@ model departments {
   status                                             Boolean?        @default(true)
   created_at                                         DateTime?       @default(now()) @db.Timestamp(6)
   updated_at                                         DateTime?       @default(now()) @db.Timestamp(6)
+  courses                                            courses[]
   faculties                                          faculties       @relation(fields: [faculty_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   instructors_departments_head_idToinstructors       instructors?    @relation("departments_head_idToinstructors", fields: [head_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_departments_head")
   instructors_instructors_department_idTodepartments instructors[]   @relation("instructors_department_idTodepartments")
@@ -198,6 +358,24 @@ model departments {
   thesis_rounds                                      thesis_rounds[]
 
   @@index([faculty_id], map: "idx_departments_faculty")
+}
+
+model enrollment_grades {
+  id                 Int                @id @default(autoincrement())
+  enrollment_id      Int
+  grade_component_id Int
+  score              Decimal?           @db.Decimal(5, 2)
+  graded_by          Int?
+  graded_at          DateTime?          @db.Timestamp(6)
+  notes              String?
+  created_at         DateTime?          @default(now()) @db.Timestamp(6)
+  updated_at         DateTime?          @default(now()) @db.Timestamp(6)
+  course_enrollments course_enrollments @relation(fields: [enrollment_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  grade_components   grade_components   @relation(fields: [grade_component_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  instructors        instructors?       @relation(fields: [graded_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([enrollment_id, grade_component_id])
+  @@index([enrollment_id], map: "idx_enrollment_grades_enrollment")
 }
 
 model faculties {
@@ -214,6 +392,43 @@ model faculties {
   departments   departments[]
   instructors   instructors?    @relation(fields: [dean_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_faculties_dean")
   thesis_rounds thesis_rounds[]
+}
+
+model final_grades {
+  id                 Int                @id @default(autoincrement())
+  enrollment_id      Int                @unique
+  weighted_score     Decimal?           @db.Decimal(5, 2)
+  letter_grade       String?            @db.VarChar(5)
+  grade_point        Decimal?           @db.Decimal(3, 2)
+  is_passed          Boolean?
+  is_locked          Boolean?           @default(false)
+  locked_by          Int?
+  locked_at          DateTime?          @db.Timestamp(6)
+  published_at       DateTime?          @db.Timestamp(6)
+  notes              String?
+  created_at         DateTime?          @default(now()) @db.Timestamp(6)
+  updated_at         DateTime?          @default(now()) @db.Timestamp(6)
+  course_enrollments course_enrollments @relation(fields: [enrollment_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users              users?             @relation(fields: [locked_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([enrollment_id], map: "idx_final_grades_enrollment")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model grade_components {
+  id                Int                 @id @default(autoincrement())
+  course_section_id Int
+  component_code    String              @db.VarChar(20)
+  component_name    String              @db.VarChar(100)
+  weight            Decimal             @db.Decimal(5, 2)
+  max_score         Decimal?            @default(10) @db.Decimal(5, 2)
+  is_required       Boolean?            @default(true)
+  order_number      Int?                @default(1)
+  created_at        DateTime?           @default(now()) @db.Timestamp(6)
+  enrollment_grades enrollment_grades[]
+  course_sections   course_sections     @relation(fields: [course_section_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([course_section_id, component_code])
 }
 
 model guidance_processes {
@@ -253,8 +468,8 @@ model instructors {
   user_id                                                     Int                      @unique
   instructor_code                                             String                   @unique @db.VarChar(20)
   department_id                                               Int
-  degree                                                      String?                  @db.VarChar(50)
-  academic_title                                              String?                  @db.VarChar(50)
+  degree                                                      String?                  @db.VarChar(100)
+  academic_title                                              String?                  @db.VarChar(100)
   specialization                                              String?
   years_of_experience                                         Int?                     @default(0)
   status                                                      Boolean?                 @default(true)
@@ -262,10 +477,12 @@ model instructors {
   updated_at                                                  DateTime?                @default(now()) @db.Timestamp(6)
   classes                                                     classes[]
   council_members                                             council_members[]
+  course_sections                                             course_sections[]
   defense_councils_defense_councils_chairman_idToinstructors  defense_councils[]       @relation("defense_councils_chairman_idToinstructors")
   defense_councils_defense_councils_secretary_idToinstructors defense_councils[]       @relation("defense_councils_secretary_idToinstructors")
   defense_results                                             defense_results[]
   departments_departments_head_idToinstructors                departments[]            @relation("departments_head_idToinstructors")
+  enrollment_grades                                           enrollment_grades[]
   faculties                                                   faculties[]
   instructor_assignments                                      instructor_assignments[]
   departments_instructors_department_idTodepartments          departments              @relation("instructors_department_idTodepartments", fields: [department_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -280,16 +497,17 @@ model instructors {
 }
 
 model majors {
-  id            Int         @id @default(autoincrement())
-  major_code    String      @unique @db.VarChar(10)
-  major_name    String      @db.VarChar(255)
+  id            Int          @id @default(autoincrement())
+  major_code    String       @unique @db.VarChar(10)
+  major_name    String       @db.VarChar(255)
   department_id Int
   description   String?
-  status        Boolean?    @default(true)
-  created_at    DateTime?   @default(now()) @db.Timestamp(6)
-  updated_at    DateTime?   @default(now()) @db.Timestamp(6)
+  status        Boolean?     @default(true)
+  created_at    DateTime?    @default(now()) @db.Timestamp(6)
+  updated_at    DateTime?    @default(now()) @db.Timestamp(6)
   classes       classes[]
-  departments   departments @relation(fields: [department_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  curriculum    curriculum[]
+  departments   departments  @relation(fields: [department_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([department_id], map: "idx_majors_department")
 }
@@ -299,7 +517,7 @@ model message_attachments {
   message_id     Int
   file_name      String    @db.VarChar(255)
   file_path      String    @db.VarChar(500)
-  file_type      String?   @db.VarChar(50)
+  file_type      String?   @db.VarChar(100)
   file_size      BigInt?
   thumbnail_path String?   @db.VarChar(500)
   duration       Int?
@@ -388,7 +606,6 @@ model messages {
   @@index([sender_id], map: "idx_messages_sender")
 }
 
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model peer_evaluations {
   id                                               Int       @id @default(autoincrement())
   thesis_id                                        Int
@@ -415,7 +632,6 @@ model peer_evaluations {
   @@index([thesis_id], map: "idx_peer_evaluations_thesis")
 }
 
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model proposed_topic_rules {
   id                Int             @id @default(autoincrement())
   proposed_topic_id Int             @unique
@@ -453,7 +669,6 @@ model proposed_topics {
   @@index([thesis_round_id], map: "idx_proposed_topics_round")
 }
 
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model review_assignments {
   id              Int             @id @default(autoincrement())
   thesis_id       Int
@@ -461,7 +676,7 @@ model review_assignments {
   review_order    Int?            @default(1)
   assignment_date DateTime?       @default(dbgenerated("CURRENT_DATE")) @db.Date
   review_deadline DateTime?       @db.Date
-  status          String?         @default("PENDING_REVIEW") @db.VarChar(50)
+  status          String?         @default("PENDING_REVIEW") @db.VarChar(100)
   created_at      DateTime?       @default(now()) @db.Timestamp(6)
   instructors     instructors     @relation(fields: [reviewer_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   theses          theses          @relation(fields: [thesis_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -472,7 +687,6 @@ model review_assignments {
   @@index([thesis_id], map: "idx_review_assignments_thesis")
 }
 
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model review_results {
   id                      Int                @id @default(autoincrement())
   review_assignment_id    Int                @unique
@@ -491,7 +705,7 @@ model review_results {
 
 model status_history {
   id            Int       @id @default(autoincrement())
-  table_name    String    @db.VarChar(50)
+  table_name    String    @db.VarChar(100)
   record_id     Int
   old_status    String?   @db.VarChar(100)
   new_status    String?   @db.VarChar(100)
@@ -499,6 +713,27 @@ model status_history {
   change_reason String?
   change_date   DateTime? @default(now()) @db.Timestamp(6)
   users         users?    @relation(fields: [changed_by_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model student_semesters {
+  id                 Int       @id @default(autoincrement())
+  student_id         Int
+  academic_year      String    @db.VarChar(10)
+  semester           Int
+  credits_registered Int?      @default(0)
+  credits_passed     Int?      @default(0)
+  credits_failed     Int?      @default(0)
+  semester_gpa       Decimal?  @db.Decimal(4, 2)
+  cumulative_gpa     Decimal?  @db.Decimal(4, 2)
+  academic_standing  String?   @default("GOOD") @db.VarChar(50)
+  notes              String?
+  created_at         DateTime? @default(now()) @db.Timestamp(6)
+  updated_at         DateTime? @default(now()) @db.Timestamp(6)
+  students           students  @relation(fields: [student_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([student_id, academic_year, semester])
+  @@index([student_id], map: "idx_student_semesters_student")
 }
 
 model student_thesis_rounds {
@@ -524,13 +759,15 @@ model students {
   admission_year                                                                 Int?
   gpa                                                                            Decimal?                                 @db.Decimal(4, 2)
   credits_earned                                                                 Int?                                     @default(0)
-  academic_status                                                                String?                                  @default("Active") @db.VarChar(50)
+  academic_status                                                                String?                                  @default("Active") @db.VarChar(100)
   cv_file                                                                        String?                                  @db.VarChar(255)
   status                                                                         Boolean?                                 @default(true)
   created_at                                                                     DateTime?                                @default(now()) @db.Timestamp(6)
   updated_at                                                                     DateTime?                                @default(now()) @db.Timestamp(6)
+  course_enrollments                                                             course_enrollments[]
   peer_evaluations_peer_evaluations_evaluated_idTostudents                       peer_evaluations[]                       @relation("peer_evaluations_evaluated_idTostudents")
   peer_evaluations_peer_evaluations_evaluator_idTostudents                       peer_evaluations[]                       @relation("peer_evaluations_evaluator_idTostudents")
+  student_semesters                                                              student_semesters[]
   student_thesis_rounds                                                          student_thesis_rounds[]
   classes                                                                        classes                                  @relation(fields: [class_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   users                                                                          users                                    @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -547,7 +784,6 @@ model students {
   @@index([class_id], map: "idx_students_class")
 }
 
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model supervision_comments {
   id                    Int         @id @default(autoincrement())
   thesis_id             Int
@@ -567,7 +803,6 @@ model supervision_comments {
   @@unique([thesis_id, instructor_id])
 }
 
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model theses {
   id                    Int                    @id @default(autoincrement())
   thesis_code           String                 @unique @db.VarChar(50)
@@ -588,7 +823,7 @@ model theses {
   review_score          Decimal?               @db.Decimal(4, 2)
   defense_score         Decimal?               @db.Decimal(4, 2)
   defense_eligible      Boolean?               @default(false)
-  status                String?                @default("IN_PROGRESS") @db.VarChar(50)
+  status                String?                @default("IN_PROGRESS") @db.VarChar(100)
   notes                 String?
   created_at            DateTime?              @default(now()) @db.Timestamp(6)
   updated_at            DateTime?              @default(now()) @db.Timestamp(6)
@@ -599,7 +834,7 @@ model theses {
   supervision_comments  supervision_comments[]
   instructors           instructors            @relation(fields: [supervisor_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   thesis_groups         thesis_groups          @relation(fields: [thesis_group_id, thesis_round_id], references: [id, thesis_round_id], onDelete: NoAction, onUpdate: NoAction)
-  topic_registrations   topic_registrations    @relation(fields: [topic_registration_id, thesis_group_id], references: [id, thesis_group_id], onDelete: NoAction, onUpdate: NoAction)
+  topic_registrations   topic_registrations    @relation(fields: [topic_registration_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   thesis_members        thesis_members[]
   thesis_tasks          thesis_tasks[]
   weekly_reports        weekly_reports[]
@@ -609,7 +844,6 @@ model theses {
   @@index([status], map: "idx_theses_status")
 }
 
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model thesis_group_invitations {
   id                                                             Int           @id @default(autoincrement())
   thesis_group_id                                                Int
@@ -629,7 +863,6 @@ model thesis_group_invitations {
   @@index([invited_student_id, status], map: "idx_thesis_group_invitations_student")
 }
 
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model thesis_group_members {
   id              Int           @id @default(autoincrement())
   thesis_group_id Int
@@ -650,7 +883,6 @@ model thesis_group_members {
   @@index([student_id, is_active], map: "idx_thesis_group_members_student")
 }
 
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model thesis_groups {
   id                       Int                        @id @default(autoincrement())
   group_code               String                     @unique @db.VarChar(20)
@@ -661,7 +893,7 @@ model thesis_groups {
   min_members              Int?                       @default(1)
   max_members              Int?                       @default(1)
   current_members          Int?                       @default(0)
-  status                   String?                    @default("FORMING") @db.VarChar(50)
+  status                   String?                    @default("FORMING") @db.VarChar(100)
   locked_at                DateTime?                  @db.Timestamp(6)
   dissolved_at             DateTime?                  @db.Timestamp(6)
   dissolution_reason       String?
@@ -679,7 +911,6 @@ model thesis_groups {
   @@index([thesis_round_id, status], map: "idx_thesis_groups_round")
 }
 
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model thesis_members {
   id                            Int       @id @default(autoincrement())
   thesis_id                     Int
@@ -716,7 +947,6 @@ model thesis_round_classes {
   @@index([thesis_round_id], map: "idx_thesis_round_classes_round")
 }
 
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model thesis_round_rules {
   id                        Int           @id @default(autoincrement())
   thesis_round_id           Int           @unique
@@ -731,7 +961,6 @@ model thesis_round_rules {
   thesis_rounds             thesis_rounds @relation(fields: [thesis_round_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model thesis_rounds {
   id                         Int                      @id @default(autoincrement())
   round_code                 String                   @unique @db.VarChar(20)
@@ -748,7 +977,7 @@ model thesis_rounds {
   report_submission_deadline DateTime?                @db.Date
   guidance_process           String?
   notes                      String?
-  status                     String?                  @default("Preparing") @db.VarChar(50)
+  status                     String?                  @default("Preparing") @db.VarChar(100)
   created_at                 DateTime?                @default(now()) @db.Timestamp(6)
   updated_at                 DateTime?                @default(now()) @db.Timestamp(6)
   defense_councils           defense_councils[]
@@ -768,7 +997,6 @@ model thesis_rounds {
   @@index([thesis_type_id], map: "idx_thesis_rounds_type")
 }
 
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model thesis_tasks {
   id                                          Int       @id @default(autoincrement())
   thesis_id                                   Int
@@ -804,7 +1032,6 @@ model thesis_types {
   thesis_rounds  thesis_rounds[]
 }
 
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model topic_registrations {
   id                          Int              @id @default(autoincrement())
   thesis_group_id             Int
@@ -819,8 +1046,8 @@ model topic_registrations {
   applied_max_members         Int?
   rule_override_by            String?          @db.VarChar(20)
   rule_override_reason        String?
-  instructor_status           String?          @default("PENDING") @db.VarChar(50)
-  head_status                 String?          @default("PENDING") @db.VarChar(50)
+  instructor_status           String?          @default("PENDING") @db.VarChar(100)
+  head_status                 String?          @default("PENDING") @db.VarChar(100)
   instructor_rejection_reason String?
   head_rejection_reason       String?
   head_override_group_mode    String?          @db.VarChar(20)
@@ -878,7 +1105,6 @@ model user_roles {
   user_role_assignments user_role_assignments[]
 }
 
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model users {
   id                                            Int                     @id @default(autoincrement())
   username                                      String                  @unique @db.VarChar(50)
@@ -894,10 +1120,13 @@ model users {
   last_login                                    DateTime?               @db.Timestamp(6)
   created_at                                    DateTime?               @default(now()) @db.Timestamp(6)
   updated_at                                    DateTime?               @default(now()) @db.Timestamp(6)
+  FileDB                                        FileDB[]
+  FolderDB                                      FolderDB[]
   blocked_users_blocked_users_blocked_idTousers blocked_users[]         @relation("blocked_users_blocked_idTousers")
   blocked_users_blocked_users_blocker_idTousers blocked_users[]         @relation("blocked_users_blocker_idTousers")
   conversation_members                          conversation_members[]
   conversations                                 conversations[]
+  final_grades                                  final_grades[]
   instructors                                   instructors?
   message_mentions                              message_mentions[]
   message_reactions                             message_reactions[]
@@ -924,7 +1153,6 @@ model weekly_report_individual_contributions {
   @@unique([weekly_report_id, student_id], map: "weekly_report_individual_contri_weekly_report_id_student_id_key")
 }
 
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model weekly_reports {
   id                                     Int                                      @id @default(autoincrement())
   thesis_id                              Int
