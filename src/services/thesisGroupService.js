@@ -11,6 +11,19 @@ const createThesisGroup = async (data) => {
     throw new Error('Không tìm thấy sinh viên');
   }
 
+  // Check if student already has an active group in this thesis round
+  const existingMember = await prisma.thesis_group_members.findFirst({
+    where: {
+      student_id: student.id,
+      thesis_round_id: parseInt(thesis_round_id),
+      is_active: true,
+    },
+  });
+
+  if (existingMember) {
+    throw new Error('Sinh viên đã có nhóm trong đợt đồ án này. Vui lòng rời nhóm hiện tại trước khi tạo nhóm mới.');
+  }
+
   // Generate unique group_code
   const group_code = `GRP-${thesis_round_id}-${Date.now().toString().slice(-6)}`;
 
@@ -76,6 +89,18 @@ const createGroupInvitation = async (data) => {
 
   if (!student) {
     throw new Error('Không tìm thấy sinh viên');
+  }
+
+  // Check if invitation already exists
+  const existingInvitation = await prisma.thesis_group_invitations.findFirst({
+    where: {
+      thesis_group_id,
+      invited_student_id,
+    },
+  });
+
+  if (existingInvitation) {
+    throw new Error('Sinh viên đã được mời vào nhóm này rồi.');
   }
 
   const invitation = await prisma.thesis_group_invitations.create({
@@ -165,11 +190,11 @@ const getInvitations = async (filters) => {
     },
     include: {
       thesis_groups: true,
-      students_invited_by: {
+      students_thesis_group_invitations_invited_byTostudents: {
         include: { users: true },
       },
     },
-    orderBy: { created_at: 'desc' },
+    orderBy: { sent_at: 'desc' },
   });
 
   return invitations;

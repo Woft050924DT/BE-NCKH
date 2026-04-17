@@ -23,7 +23,7 @@ router.get('/:id/instructors', getInstructorAssignments);
 router.post('/:id/assign-classes', auth, assignClasses);
 router.post('/:id/guidance-process', auth, addGuidanceProcess);
 router.patch('/:roundId/status', auth, updateRoundStatus);
-router.get('/', auth, getThesisRounds);
+router.get('/', getThesisRounds); // Public endpoint
 router.get('/active', auth, getActiveThesisRounds);
 router.get('/:id', auth, getThesisRoundById);
 

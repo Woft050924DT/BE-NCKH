@@ -4,11 +4,14 @@ const getSupervisedStudents = async (req, res) => {
   try {
     const { id } = req.params;
     const { thesis_round_id, status } = req.query;
+    console.log('Fetching supervised students for instructor:', id, 'with filters:', { thesis_round_id, status });
     const result = await instructorService.getSupervisedStudents(id, { thesis_round_id, status });
     res.json(result);
   } catch (error) {
     console.error('Get supervised students error:', error);
-    res.status(500).json({ error: 'Lỗi lấy danh sách sinh viên được hướng dẫn' });
+    console.error('Error stack:', error.stack);
+    console.error('Error message:', error.message);
+    res.status(500).json({ error: 'Lỗi lấy danh sách sinh viên được hướng dẫn', details: error.message });
   }
 };
 

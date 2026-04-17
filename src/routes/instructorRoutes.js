@@ -9,7 +9,7 @@ router.get('/thesis-rounds', auth, getActiveThesisRounds);
 router.get('/by-user/:user_id', getInstructorByUserId);
 router.get('/', getInstructors);
 router.get('/:id', getInstructorById);
-router.get('/:id/supervised-students', auth, getSupervisedStudents);
+router.get('/:id/supervised-students', getSupervisedStudents);
 router.post('/', createInstructor);
 
 module.exports = router;

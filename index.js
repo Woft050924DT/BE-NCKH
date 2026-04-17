@@ -35,6 +35,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/department-head/thesis-rounds', thesisRoundRoutes);
+app.use('/api/thesis-rounds', thesisRoundRoutes);
 app.use('/api/topic-registrations', topicRegistrationRoutes);
 app.use('/api/thesis-groups', thesisGroupRoutes);
 app.use('/api/councils', councilRoutes);
