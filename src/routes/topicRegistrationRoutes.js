@@ -6,7 +6,6 @@ const {
   createTopicRegistration,
   getTopicRegistrations,
   getPendingRegistrations,
-  getPendingRegistrationsForHead,
   approveRegistration,
   headApproveRegistration,
 } = require('../controllers/topicRegistrationController');
@@ -16,7 +15,6 @@ router.get('/proposed-topics', getProposedTopics);
 router.post('/', createTopicRegistration);
 router.get('/', getTopicRegistrations);
 router.get('/pending', getPendingRegistrations);
-router.get('/pending/head', getPendingRegistrationsForHead);
 router.put('/:id/approve', approveRegistration);
 router.put('/:id/head-approve', headApproveRegistration);
 

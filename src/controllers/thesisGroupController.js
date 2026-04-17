@@ -69,6 +69,17 @@ const getInvitations = async (req, res) => {
   }
 };
 
+const leaveGroup = async (req, res) => {
+  try {
+    const result = await thesisGroupService.leaveGroup(req.body);
+    res.json(result);
+  } catch (error) {
+    console.error('Leave group error:', error);
+    const statusCode = error.message.includes('Không tìm thấy') || error.message.includes('không phải') ? 400 : 500;
+    res.status(statusCode).json({ error: error.message || 'Lỗi rời nhóm' });
+  }
+};
+
 module.exports = {
   createThesisGroup,
   getThesisGroups,
@@ -76,4 +87,5 @@ module.exports = {
   acceptInvitation,
   rejectInvitation,
   getInvitations,
+  leaveGroup,
 };
