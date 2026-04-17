@@ -20,6 +20,7 @@ const registrationRoutes = require('./src/routes/registrationRoutes');
 const weeklyReportRoutes = require('./src/routes/weeklyReportRoutes');
 const studentRoutes = require('./src/routes/studentRoutes');
 const councilRoutes = require('./src/routes/councilRoutes');
+const adminRoutes = require('./src/routes/adminRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -32,6 +33,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminRoutes);
 app.use('/api/department-head/thesis-rounds', thesisRoundRoutes);
 app.use('/api/topic-registrations', topicRegistrationRoutes);
 app.use('/api/thesis-groups', thesisGroupRoutes);

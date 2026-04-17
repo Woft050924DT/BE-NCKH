@@ -1,5 +1,17 @@
 const instructorService = require('../services/instructorService');
 
+const getSupervisedStudents = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { thesis_round_id, status } = req.query;
+    const result = await instructorService.getSupervisedStudents(id, { thesis_round_id, status });
+    res.json(result);
+  } catch (error) {
+    console.error('Get supervised students error:', error);
+    res.status(500).json({ error: 'Lỗi lấy danh sách sinh viên được hướng dẫn' });
+  }
+};
+
 const getInstructors = async (req, res) => {
   try {
     const { thesis_round_id, search, department_id } = req.query;
@@ -70,4 +82,5 @@ module.exports = {
   getInstructorByUserId,
   createInstructor,
   getInstructorsByDepartmentHead,
+  getSupervisedStudents,
 };

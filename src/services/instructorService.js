@@ -299,10 +299,107 @@ const getInstructorsByDepartmentHead = async (department_id, filters) => {
   });
 };
 
+const getSupervisedStudents = async (instructorId, filters) => {
+  const { thesis_round_id, status } = filters;
+
+  const where = {
+    supervisor_id: parseInt(instructorId),
+  };
+
+  if (thesis_round_id) {
+    where.thesis_round_id = parseInt(thesis_round_id);
+  }
+
+  if (status) {
+    where.status = status;
+  }
+
+  const theses = await prisma.theses.findMany({
+    where,
+    include: {
+      thesis_members: {
+        where: {
+          is_active: true,
+        },
+        include: {
+          students: {
+            include: {
+              users: {
+                select: {
+                  id: true,
+                  full_name: true,
+                  email: true,
+                  phone: true,
+                  avatar: true,
+                },
+              },
+              classes: {
+                select: {
+                  id: true,
+                  class_code: true,
+                  class_name: true,
+                },
+              },
+            },
+          },
+        },
+      },
+      thesis_groups: {
+        select: {
+          id: true,
+          group_code: true,
+          group_name: true,
+        },
+      },
+      thesis_rounds: {
+        select: {
+          id: true,
+          round_name: true,
+          academic_year: true,
+        },
+      },
+    },
+    orderBy: {
+      created_at: 'desc',
+    },
+  });
+
+  // Flatten the result to return students with their thesis information
+  const students = [];
+  theses.forEach((thesis) => {
+    thesis.thesis_members.forEach((member) => {
+      students.push({
+        student: member.students,
+        thesis: {
+          id: thesis.id,
+          thesis_code: thesis.thesis_code,
+          topic_title: thesis.topic_title,
+          status: thesis.status,
+          supervision_score: thesis.supervision_score,
+          review_score: thesis.review_score,
+          defense_score: thesis.defense_score,
+          role: member.role,
+          contribution_description: member.contribution_description,
+          individual_contribution_score: member.individual_contribution_score,
+          peer_evaluation_score: member.peer_evaluation_score,
+          supervisor_individual_score: member.supervisor_individual_score,
+          final_score: member.final_score,
+          grade: member.grade,
+        },
+        thesis_group: thesis.thesis_groups,
+        thesis_round: thesis.thesis_rounds,
+      });
+    });
+  });
+
+  return students;
+};
+
 module.exports = {
   getInstructors,
   getInstructorById,
   getInstructorByUserId,
   createInstructor,
   getInstructorsByDepartmentHead,
+  getSupervisedStudents,
 };
